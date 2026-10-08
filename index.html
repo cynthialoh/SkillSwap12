@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f7f8" />
+    <title>SkillSwap — Your skills are currency</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <a class="brand" href="#overview" aria-label="SkillSwap home">
+          <span class="brand-mark">S</span><span>Skill<span class="brand-accent">Swap</span></span>
+        </a>
+        <div class="workspace-label">YOUR SPACE</div>
+        <nav class="nav-list">
+          <button class="nav-item active" data-view="overview"><span class="nav-icon">⌂</span>Overview</button>
+          <button class="nav-item" data-view="discover"><span class="nav-icon">⌕</span>Discover</button>
+          <button class="nav-item" data-view="skills"><span class="nav-icon">✳</span>My skills</button>
+          <button class="nav-item" data-view="exchanges"><span class="nav-icon">⇄</span>Exchanges<span class="nav-count">2</span></button>
+          <button class="nav-item" data-view="credits"><span class="nav-icon">◉</span>Credits</button>
+          <button class="nav-item" data-view="saved"><span class="nav-icon">♡</span>Saved</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="help-card"><div class="help-icon">✦</div><strong>Every skill has value.</strong><p>Share what you know. Find what you need.</p><a href="#how-it-works">How it works <span>↗</span></a></div>
+          <button class="profile-mini" aria-label="Open profile"><span class="avatar avatar-me">AM</span><span class="profile-mini-copy"><strong>Alex Morgan</strong><small>Member · Trust level 2</small></span><span class="more">···</span></button>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <div class="breadcrumb"><span>Workspace</span><span class="crumb-slash">/</span><strong id="current-section">Overview</strong></div>
+          <div class="top-actions">
+            <label class="search-box"><span>⌕</span><input id="global-search" type="search" placeholder="Search skills or people" aria-label="Search skills or people" /><kbd>⌘ K</kbd></label>
+            <button class="icon-button notification-button" aria-label="Notifications">♧<i></i></button>
+            <button class="avatar avatar-me top-avatar" aria-label="Account">AM</button>
+          </div>
+        </header>
+
+        <section class="content-view active" id="view-overview">
+          <div class="welcome-row">
+            <div><div class="eyebrow"><span class="eyebrow-dot"></span>WEDNESDAY, OCTOBER 8</div><h1>Good morning, Alex <span class="wave">✦</span></h1><p class="subtitle">A little knowledge goes a long way. What will you learn today?</p></div>
+            <button class="button button-primary" data-view="discover"><span>＋</span> Find a skill to learn</button>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card balance-card"><div class="stat-top"><span>Skill Credit balance</span><span class="stat-symbol credit-symbol">◉</span></div><div class="stat-value">14 <small>credits</small></div><div class="stat-foot"><span class="positive">↗ 2 this month</span><button class="text-button" data-view="credits">View wallet →</button></div></article>
+            <article class="stat-card"><div class="stat-top"><span>Exchanges completed</span><span class="stat-symbol teal-symbol">⇄</span></div><div class="stat-value">8</div><div class="stat-foot"><span class="muted">You’re building momentum</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span>Your trust level</span><span class="stat-symbol blue-symbol">✦</span></div><div class="stat-value">Level 2</div><div class="progress-track"><span style="width:62%"></span></div><div class="stat-foot"><span class="muted">3 more exchanges to Level 3</span></div></article>
+          </div>
+
+          <div class="section-heading"><div><h2>Your skill journey</h2><p>One account. Two sides of every exchange.</p></div><button class="text-button" data-view="skills">Manage skills →</button></div>
+          <div class="journey-grid">
+            <article class="journey-card teach-card"><div class="journey-heading"><span class="journey-icon teach-icon">↗</span><div><span class="card-kicker">I CAN TEACH</span><h3>Share what you know</h3></div><button class="round-plus" data-add="teach" aria-label="Add a teaching skill">＋</button></div><div class="skill-chips"><span class="skill-chip"><i class="chip-dot dot-violet"></i>Graphic design</span><span class="skill-chip"><i class="chip-dot dot-blue"></i>Figma</span><button class="add-chip" data-add="teach">＋ Add a skill</button></div><div class="card-bottom"><span><b>3 people</b> want to learn from you</span><button class="text-button" data-view="discover">See who →</button></div></article>
+            <article class="journey-card learn-card"><div class="journey-heading"><span class="journey-icon learn-icon">↘</span><div><span class="card-kicker">I WANT TO LEARN</span><h3>Choose what’s next</h3></div><button class="round-plus" data-add="learn" aria-label="Add a learning goal">＋</button></div><div class="skill-chips"><span class="skill-chip"><i class="chip-dot dot-orange"></i>Photography</span><span class="skill-chip"><i class="chip-dot dot-green"></i>Excel</span><button class="add-chip" data-add="learn">＋ Add a skill</button></div><div class="card-bottom"><span><b>12 teachers</b> match your interests</span><button class="text-button" data-view="discover">Explore →</button></div></article>
+          </div>
+
+          <div class="section-heading section-heading-spaced"><div><h2>Good matches for you</h2><p>People and skills picked for your learning goals.</p></div><button class="text-button" data-view="discover">Explore all matches →</button></div>
+          <div class="match-grid" id="featured-matches"></div>
+
+          <div class="section-heading section-heading-spaced"><div><h2>Coming up</h2><p>Your next opportunities to learn and share.</p></div><button class="text-button" data-view="exchanges">See schedule →</button></div>
+          <div class="upcoming-card"><div class="date-block"><strong>10</strong><span>OCT</span></div><div class="upcoming-info"><span class="status-label status-confirmed">CONFIRMED</span><h3>Portfolio review & design feedback</h3><p>with Maya Chen <span>·</span> Friday, 3:00 PM GST <span>·</span> You’re teaching</p></div><button class="button button-secondary">Session details</button></div>
+        </section>
+
+        <section class="content-view" id="view-discover">
+          <div class="welcome-row compact-welcome"><div><div class="eyebrow"><span class="eyebrow-dot"></span>LEARN SOMETHING NEW</div><h1>Find your next skill</h1><p class="subtitle">Meet people who can teach what you want to learn.</p></div></div>
+          <div class="discover-toolbar"><label class="search-box search-wide"><span>⌕</span><input id="discover-search" type="search" placeholder="Try “photography” or “Excel”" aria-label="Search discover" /></label><button class="filter-button">☷ <span>Filters</span></button><div class="category-pills"><button class="category-pill selected" data-category="All">All skills</button><button class="category-pill" data-category="Technology">Technology</button><button class="category-pill" data-category="Creative">Creative</button><button class="category-pill" data-category="Business">Business</button><button class="category-pill" data-category="Lifestyle">Lifestyle</button></div></div>
+          <div class="results-caption"><span id="results-count">12 people and skills</span><button class="text-button">Recommended⌄</button></div>
+          <div class="discover-grid" id="discover-results"></div>
+        </section>
+
+        <section class="content-view" id="view-skills">
+          <div class="welcome-row compact-welcome"><div><div class="eyebrow"><span class="eyebrow-dot"></span>YOUR PROFILE</div><h1>Your skills, your way</h1><p class="subtitle">Keep both sides of your learning journey up to date.</p></div><button class="button button-primary" data-add="teach">＋ Add a skill</button></div>
+          <div class="profile-banner"><span class="avatar avatar-large avatar-me">AM</span><div><h2>Alex Morgan</h2><p>Product designer · Dubai, UAE</p><div class="profile-badges"><span>✦ Trust level 2</span><span>✓ Email verified</span></div></div><button class="button button-secondary">Edit profile</button></div>
+          <div class="skills-columns"><article class="skills-panel"><div class="panel-heading"><div><span class="card-kicker">I CAN TEACH</span><h2>Your teaching skills</h2></div><button class="round-plus" data-add="teach" aria-label="Add a teaching skill">＋</button></div><div class="owned-skills" id="teach-list"></div></article><article class="skills-panel"><div class="panel-heading"><div><span class="card-kicker">I WANT TO LEARN</span><h2>Your learning goals</h2></div><button class="round-plus" data-add="learn" aria-label="Add a learning goal">＋</button></div><div class="owned-skills" id="learn-list"></div></article></div>
+        </section>
+
+        <section class="content-view" id="view-exchanges">
+          <div class="welcome-row compact-welcome"><div><div class="eyebrow"><span class="eyebrow-dot"></span>YOUR LEARNING, IN MOTION</div><h1>Exchanges</h1><p class="subtitle">Requests, sessions, and the people you’re learning with.</p></div><button class="button button-primary" data-view="discover">＋ Start an exchange</button></div>
+          <div class="tabs"><button class="tab active" data-exchange-tab="upcoming">Upcoming <span>2</span></button><button class="tab" data-exchange-tab="requests">Requests <span>1</span></button><button class="tab" data-exchange-tab="past">Past exchanges</button></div>
+          <div id="exchange-content"></div>
+        </section>
+
+        <section class="content-view" id="view-credits">
+          <div class="welcome-row compact-welcome"><div><div class="eyebrow"><span class="eyebrow-dot"></span>YOUR WALLET</div><h1>Skill Credits</h1><p class="subtitle">Earn credits by teaching. Use them to learn from others.</p></div><button class="button button-secondary">＋ Get credits</button></div>
+          <div class="wallet-card"><div><span class="card-kicker">AVAILABLE BALANCE</span><div class="wallet-value">14 <small>Skill Credits</small></div><p>Credits stay in your account and never expire.</p></div><span class="wallet-coin">◉</span></div>
+          <div class="section-heading section-heading-spaced"><div><h2>Recent activity</h2><p>Your credit history at a glance.</p></div></div><div class="activity-list" id="credit-activity"></div>
+          <p class="prototype-note">Credit values shown here are sample data. Session pricing follows the SkillSwap PRD.</p>
+        </section>
+
+        <section class="content-view" id="view-saved">
+          <div class="welcome-row compact-welcome"><div><div class="eyebrow"><span class="eyebrow-dot"></span>BOOKMARKS</div><h1>Saved for later</h1><p class="subtitle">Skills and teachers you want to come back to.</p></div></div>
+          <div class="discover-grid" id="saved-results"></div>
+        </section>
+
+        <section class="content-view admin-view" id="view-admin">
+          <div class="welcome-row compact-welcome"><div><div class="eyebrow admin-eyebrow"><span class="eyebrow-dot"></span>PLATFORM OPERATIONS</div><h1>Admin overview</h1><p class="subtitle">A separate operator account keeps the marketplace safe and fair.</p></div><span class="admin-badge">ADMIN ACCOUNT</span></div>
+          <div class="admin-stats"><article class="stat-card"><div class="stat-top">Open reports <span>↗</span></div><div class="stat-value">4</div><div class="stat-foot"><span class="muted">2 need review today</span></div></article><article class="stat-card"><div class="stat-top">Pending verifications <span>✓</span></div><div class="stat-value">7</div><div class="stat-foot"><span class="muted">Oldest is 1 day old</span></div></article><article class="stat-card"><div class="stat-top">Sessions this week <span>⇄</span></div><div class="stat-value">126</div><div class="stat-foot"><span class="positive">↗ 12% from last week</span></div></article></div>
+          <div class="section-heading section-heading-spaced"><div><h2>Needs attention</h2><p>Review member reports and safety concerns.</p></div><button class="text-button">View all →</button></div>
+          <div class="admin-queue"><div class="queue-row"><span class="queue-priority priority-high"></span><span class="queue-type">Safety report</span><span class="queue-description">Unwanted messages after a session</span><span class="queue-age">24 min ago</span><button class="button button-small button-secondary">Review</button></div><div class="queue-row"><span class="queue-priority priority-medium"></span><span class="queue-type">Session dispute</span><span class="queue-description">Teacher and learner disagree on completion</span><span class="queue-age">2 hours ago</span><button class="button button-small button-secondary">Review</button></div><div class="queue-row"><span class="queue-priority priority-low"></span><span class="queue-type">Profile review</span><span class="queue-description">Skill verification request · Photography</span><span class="queue-age">Yesterday</span><button class="button button-small button-secondary">Review</button></div></div>
+          <p class="prototype-note">Prototype only: admin tools require a separate, authorized admin account in a production build.</p>
+        </section>
+
+        <footer class="page-footer"><span>SkillSwap <span class="footer-dot">·</span> Your skills are currency.</span><button id="admin-preview">Admin preview <span>↗</span></button></footer>
+      </main>
+    </div>
+
+    <dialog id="skill-dialog" class="skill-dialog">
+      <form method="dialog" id="skill-form">
+        <button class="dialog-close" value="cancel" aria-label="Close">×</button>
+        <span class="card-kicker" id="dialog-kicker">ADD A SKILL</span><h2 id="dialog-title">What can you teach?</h2><p class="dialog-description">Add a skill to help the right people find you.</p>
+        <label class="field-label" for="skill-name">Skill</label><input class="form-input" id="skill-name" name="skill" placeholder="e.g. Photography" required maxlength="42" />
+        <label class="field-label" for="skill-level">Experience level</label><select class="form-input" id="skill-level" name="level"><option>Beginner</option><option selected>Intermediate</option><option>Advanced</option></select>
+        <input type="hidden" id="skill-kind" value="teach" />
+        <div class="dialog-actions"><button class="button button-secondary" value="cancel">Cancel</button><button class="button button-primary" id="save-skill" value="default">Save skill</button></div>
+      </form>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
