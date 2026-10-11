@@ -1,0 +1,43 @@
+name: SkillSwap foundation checks
+
+on:
+  push:
+    paths:
+      - "skillswap-app/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "skillswap-app/**"
+      - ".github/workflows/ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skillswap-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: skillswap-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: skillswap-app/package-lock.json
+      - run: npm ci
+      - name: Generate Prisma client
+        run: npm run db:generate
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/skillswap?schema=public
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/skillswap?schema=public

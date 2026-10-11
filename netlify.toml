@@ -1,0 +1,9 @@
+# The app is inside the skillswap-app subdirectory. Netlify resolves publish
+# paths relative to the base directory, so publish must be `.next` here.
+[build]
+  base = "skillswap-app"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "24"

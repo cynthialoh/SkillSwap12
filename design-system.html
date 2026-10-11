@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f7f8" />
+    <title>SkillSwap — Design system</title>
+    <link rel="icon" type="image/png" href="skillswap-symbol.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="design-system.css" />
+  </head>
+  <body>
+    <div class="ds-page">
+      <header class="ds-topbar">
+        <a class="ds-brand" href="index.html" aria-label="SkillSwap home"><img class="ds-brand-mark" src="skillswap-symbol.png" alt="" /><img class="ds-brand-wordmark" src="skillswap-wordmark.png" alt="" /></a>
+        <div class="ds-header-copy"><span class="ds-kicker">PHASE 0 · DESIGN FOUNDATION</span><h1>SkillSwap design system</h1></div>
+        <a class="ds-back-link" href="index.html">Open product prototype <span aria-hidden="true">↗</span></a>
+      </header>
+
+      <div class="ds-layout">
+        <nav class="ds-nav" aria-label="Design system sections">
+          <a href="#principles">Principles</a><a href="#color">Color</a><a href="#type">Typography</a><a href="#layout">Layout</a><a href="#components">Components</a><a href="#states">Interaction states</a><a href="#screens">Screen map</a>
+        </nav>
+
+        <main class="ds-main">
+          <section class="ds-intro" id="principles">
+            <div>
+              <span class="ds-eyebrow"><span class="ds-eyebrow-dot"></span>ONE MEMBER · TWO SIDES OF LEARNING</span>
+              <h2>Bright, welcoming, and easy to trust.</h2>
+              <p>The interface helps Members teach and learn from one account. Teal anchors the experience; brighter accents distinguish skills, progress, and session states without relying on color alone.</p>
+            </div>
+            <div class="ds-logo-card"><img src="skillswap-logo.png" alt="SkillSwap logo: opposing arrows form a circle around an S and K monogram, in teal and violet." /><span>Original logo · app palette</span></div>
+          </section>
+
+          <section class="ds-section" id="color">
+            <div class="ds-section-heading"><div><span class="ds-kicker">01 · FOUNDATION</span><h2>Color roles</h2></div><p>Use color to guide attention and make states easier to recognize.</p></div>
+            <div class="ds-color-grid">
+              <article class="ds-color-card"><span class="ds-swatch" style="--swatch:var(--teal)"></span><strong>Primary teal</strong><small>#0F8176 · actions, links</small></article>
+              <article class="ds-color-card"><span class="ds-swatch" style="--swatch:var(--teal-pale)"></span><strong>Teal tint</strong><small>#E3F7F3 · selected surfaces</small></article>
+              <article class="ds-color-card"><span class="ds-swatch" style="--swatch:var(--amber)"></span><strong>Amber</strong><small>#F6AD3C · learning accent</small></article>
+              <article class="ds-color-card"><span class="ds-swatch" style="--swatch:var(--blue)"></span><strong>Blue</strong><small>#2F86AD · information</small></article>
+              <article class="ds-color-card"><span class="ds-swatch" style="--swatch:var(--violet)"></span><strong>Violet</strong><small>#7867CF · teaching accent</small></article>
+              <article class="ds-color-card"><span class="ds-swatch" style="--swatch:var(--green)"></span><strong>Green</strong><small>#258762 · success</small></article>
+              <article class="ds-color-card"><span class="ds-swatch" style="--swatch:var(--red)"></span><strong>Coral red</strong><small>#D65459 · error, urgent</small></article>
+              <article class="ds-color-card"><span class="ds-swatch ds-swatch-canvas"></span><strong>Canvas &amp; paper</strong><small>#F5F7F8 · #FFFFFF</small></article>
+            </div>
+          </section>
+
+          <section class="ds-section" id="type">
+            <div class="ds-section-heading"><div><span class="ds-kicker">02 · TYPE</span><h2>Clear, friendly hierarchy</h2></div><p>Manrope for expressive headings; DM Sans for useful, readable interface text.</p></div>
+            <div class="ds-type-sample">
+              <div class="ds-type-display"><span class="ds-kicker">MANROPE · PAGE HEADING</span><strong>Learn something new.</strong><span class="ds-type-h2">One skill at a time.</span></div>
+              <div class="ds-type-body"><span class="ds-kicker">DM SANS · PRODUCT COPY</span><p class="ds-body-large">A little knowledge goes a long way. What will you learn today?</p><p>Tell people what you can teach, what you want to learn, and when you’re available.</p><small>LABEL / SUPPORTING TEXT · 12px minimum for essential instructions</small></div>
+            </div>
+          </section>
+
+          <section class="ds-section" id="layout">
+            <div class="ds-section-heading"><div><span class="ds-kicker">03 · SHAPE &amp; SPACE</span><h2>Comfortable rhythm</h2></div><p>Responsive layouts keep the next action visible on narrow and wide screens.</p></div>
+            <div class="ds-layout-grid">
+              <article class="ds-token-card"><strong>Spacing scale</strong><div class="ds-space-row"><span>4</span><i style="--space:4px"></i><span>8</span><i style="--space:8px"></i><span>12</span><i style="--space:12px"></i><span>16</span><i style="--space:16px"></i><span>24</span><i style="--space:24px"></i><span>32</span><i style="--space:32px"></i></div><small>4px base unit · 12–16px card padding · 24–32px section rhythm</small></article>
+              <article class="ds-token-card"><strong>Radii &amp; elevation</strong><div class="ds-shape-row"><span class="ds-shape ds-radius-8">8</span><span class="ds-shape ds-radius-12">12</span><span class="ds-shape ds-radius-16">16</span><span class="ds-shape ds-elevation">Card shadow</span></div><small>Inputs 7–8px · cards 11–14px · dialogs 14px</small></article>
+            </div>
+          </section>
+
+          <section class="ds-section" id="components">
+            <div class="ds-section-heading"><div><span class="ds-kicker">04 · COMPONENTS</span><h2>Product building blocks</h2></div><p>Examples use the same Member model for both teaching and learning.</p></div>
+            <div class="ds-component-grid">
+              <article class="ds-demo-card ds-demo-wide"><div class="ds-demo-title"><strong>Buttons</strong><small>Primary, secondary, quiet, and unavailable</small></div><div class="ds-button-row"><button class="ds-button ds-primary">Find a skill to learn <span>→</span></button><button class="ds-button ds-secondary">View profile</button><button class="ds-button ds-quiet">Cancel</button><button class="ds-button ds-disabled" disabled>Unavailable</button></div></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Member navigation</strong><small>Teach and learn in one account</small></div><div class="ds-nav-sample"><b>Skill<span>Swap</span></b><a class="ds-nav-active" href="#screens">⌂ &nbsp; Overview</a><a href="#screens">⌕ &nbsp; Discover</a><a href="#screens">✳ &nbsp; My skills</a><a href="#screens">⇄ &nbsp; Exchanges</a><a href="#screens">◉ &nbsp; Credits</a></div></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Admin navigation</strong><small>Separate operational workspace</small></div><div class="ds-nav-sample ds-nav-admin"><b>Skill<span>Swap</span> <small>OPERATIONS</small></b><a class="ds-nav-active" href="#screens">▦ &nbsp; Overview</a><a href="#screens">⚑ &nbsp; Reports</a><a href="#screens">⇄ &nbsp; Disputes</a><a href="#screens">✓ &nbsp; Verification</a><a href="#screens">◉ &nbsp; Credit review</a></div></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Skill chips</strong><small>Teach and learn labels</small></div><div class="ds-chip-row"><span class="ds-chip"><i class="ds-dot ds-dot-violet"></i>I can teach · Figma</span><span class="ds-chip"><i class="ds-dot ds-dot-amber"></i>I want to learn · Photography</span></div><div class="ds-chip-row"><span class="ds-tag">Creative</span><span class="ds-tag ds-tag-teal">Intermediate</span></div></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Profile summary</strong><small>Identity, trust, and match context</small></div><div class="ds-profile"><span class="ds-avatar">MC</span><div><b>Maya Chen</b><small>Product designer · Dubai</small><span class="ds-trust">✦ Trust level 2</span></div><span class="ds-match">Good match</span></div><p class="ds-card-copy">Can teach Figma; wants to learn photography.</p></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Session summary</strong><small>Make time and status easy to scan</small></div><div class="ds-session"><div class="ds-date"><b>10</b><small>OCT</small></div><div><span class="ds-status ds-status-success">CONFIRMED</span><b>Portfolio review</b><small>Friday · 3:00 PM GST · 60 minutes</small></div></div><button class="ds-button ds-secondary ds-full">Session details</button></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Credit amount</strong><small>Explain the balance and its use</small></div><div class="ds-credit-card"><span>AVAILABLE BALANCE</span><strong>14 <small>Skill Credits</small></strong><p>Earn by teaching. Spend to learn.</p></div></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Form controls</strong><small>Labels, hints, and clear errors</small></div><label class="ds-label" for="demo-skill">Skill you want to learn</label><input class="ds-input" id="demo-skill" value="Photography" /><small class="ds-hint">Choose a skill you’re excited to practice.</small><label class="ds-error-label" for="demo-error">Availability</label><input class="ds-input ds-input-error" id="demo-error" aria-invalid="true" aria-describedby="demo-error-copy" placeholder="Select a time" /><small class="ds-error-copy" id="demo-error-copy">Choose at least one time that works for you.</small></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Select &amp; checkbox</strong><small>Native controls with associated labels</small></div><label class="ds-label" for="demo-level">Experience level</label><select class="ds-input" id="demo-level"><option>Choose a level</option><option selected>Intermediate</option><option>Advanced</option></select><label class="ds-check"><input type="checkbox" checked /><span>Show this skill on my profile</span></label></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Tabs, badges &amp; alert</strong><small>Current state is named, not color-only</small></div><div class="ds-tabs" role="tablist" aria-label="Example exchange tabs"><button role="tab" aria-selected="true">Upcoming <span>2</span></button><button role="tab" aria-selected="false">Requests</button><button role="tab" aria-selected="false">Past</button></div><div class="ds-alert" role="status"><b>Profile saved</b><span>Your teaching and learning skills are up to date.</span></div></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Dialog &amp; toast</strong><small>Confirm consequential actions; announce brief feedback</small></div><div class="ds-dialog-sample" role="dialog" aria-labelledby="demo-dialog-title"><b id="demo-dialog-title">Send a learning request?</b><p>Ask Maya about a 60-minute Figma session.</p><div><button class="ds-button ds-secondary">Cancel</button><button class="ds-button ds-primary">Send request</button></div></div><div class="ds-toast-sample" role="status"><span aria-hidden="true">✓</span> Request sent to Maya</div></article>
+
+              <article class="ds-demo-card"><div class="ds-demo-title"><strong>Empty, loading &amp; pagination</strong><small>Keep orientation when content changes</small></div><div class="ds-state-examples"><div class="ds-empty-sample"><span aria-hidden="true">⌕</span><b>No matches yet</b><small>Try a different skill or category.</small></div><div class="ds-loading-sample" aria-label="Loading results"><i></i><i></i><i></i></div></div><div class="ds-pagination"><button aria-label="Previous page" disabled>←</button><span>Page 1 of 4</span><button aria-label="Next page">→</button></div></article>
+
+              <article class="ds-demo-card ds-demo-wide"><div class="ds-demo-title"><strong>Admin review row</strong><small>Priority, issue, age, and next action</small></div><div class="ds-admin-row"><span class="ds-priority" aria-label="High priority"></span><div><b>Safety report</b><small>Unwanted messages after a session</small></div><span class="ds-age">24 min ago</span><button class="ds-button ds-secondary">Review case</button></div></article>
+            </div>
+          </section>
+
+          <section class="ds-section" id="states">
+            <div class="ds-section-heading"><div><span class="ds-kicker">05 · INTERACTION</span><h2>States are visible and named</h2></div><p>Focus, status, and errors combine shape, text, and color.</p></div>
+            <div class="ds-state-grid">
+              <article class="ds-token-card"><strong>Keyboard focus</strong><button class="ds-button ds-primary ds-focus-sample">Focused button</button><small>Strong outline stays visible against the control and page.</small></article>
+              <article class="ds-token-card"><strong>Status badges</strong><div class="ds-state-badges"><span class="ds-status ds-status-success">COMPLETED</span><span class="ds-status ds-status-warning">NEEDS RESPONSE</span><span class="ds-status ds-status-error">ACTION REQUIRED</span></div><small>State text remains present when color is unavailable.</small></article>
+              <article class="ds-token-card"><strong>Reduced motion</strong><div class="ds-motion-sample"><span aria-hidden="true">✦</span><span>Motion is brief and optional.</span></div><small>Transitions are disabled when the device requests reduced motion.</small></article>
+            </div>
+          </section>
+
+          <section class="ds-section" id="screens">
+            <div class="ds-section-heading"><div><span class="ds-kicker">06 · EXPERIENCE MAP</span><h2>Core screen map</h2></div><p>Member and Admin are the only account types.</p></div>
+            <div class="ds-screen-map">
+              <article><span class="ds-map-role">MEMBER</span><b>Join &amp; set up</b><p>Sign up → verify email → profile → skills to teach and learn → availability and privacy settings.</p></article>
+              <article><span class="ds-map-role">MEMBER</span><b>Find &amp; connect</b><p>Overview → discover and search → match reason → profile → request → private conversation.</p></article>
+              <article><span class="ds-map-role">MEMBER</span><b>Exchange &amp; continue</b><p>Agree time → session details and meeting link → complete → review → credit history.</p></article>
+              <article><span class="ds-map-role">MEMBER</span><b>Manage account</b><p>Profile and listings → privacy and visibility → saved people and skills → notification preferences.</p></article>
+              <article><span class="ds-map-role ds-map-admin">ADMIN</span><b>Review &amp; resolve</b><p>Admin home → report or dispute queue → evidence and context → reasoned action → audit record.</p></article>
+            </div>
+          </section>
+          <footer class="ds-footer">SkillSwap · Design foundation · Phase 0 <a href="index.html">Return to product prototype ↑</a></footer>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

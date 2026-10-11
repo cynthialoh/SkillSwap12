@@ -1,0 +1,22 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    id: "/",
+    name: "SkillSwap — Your skills are currency",
+    short_name: "SkillSwap",
+    description: "Share what you know. Find what you need.",
+    start_url: "/?source=pwa",
+    scope: "/",
+    display: "standalone",
+    background_color: "#f5f7f8",
+    theme_color: "#0f8176",
+    lang: "en",
+    categories: ["education", "social", "productivity"],
+    icons: [
+      { src: "/pwa-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/pwa-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
+  };
+}

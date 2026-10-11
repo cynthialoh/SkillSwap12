@@ -1,0 +1,1 @@
+-- Empty initial placeholder; the base schema is created by the following foundation migration.

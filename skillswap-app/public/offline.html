@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f8176" />
+    <title>Offline · SkillSwap</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, sans-serif;
+        color: #19232b;
+        background: #f5f7f8;
+      }
+      body {
+        box-sizing: border-box;
+        display: grid;
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px;
+        place-items: center;
+      }
+      main {
+        width: min(100%, 420px);
+        padding: 32px;
+        border: 1px solid #e7ecee;
+        border-radius: 20px;
+        background: white;
+        box-shadow: 0 18px 55px rgb(19 40 49 / 8%);
+        text-align: center;
+      }
+      img {
+        width: 88px;
+        height: 88px;
+      }
+      h1 {
+        margin: 18px 0 10px;
+        font-size: 1.5rem;
+      }
+      p {
+        color: #65737b;
+        line-height: 1.6;
+      }
+      button {
+        margin-top: 12px;
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 10px;
+        color: white;
+        background: #0f8176;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/pwa-192.png" alt="" />
+      <h1>You’re offline</h1>
+      <p>
+        Reconnect to continue using SkillSwap. Your private pages and account data are never stored
+        for offline access.
+      </p>
+      <button onclick="location.reload()" type="button">Try again</button>
+    </main>
+  </body>
+</html>

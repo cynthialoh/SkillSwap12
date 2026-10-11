@@ -1,0 +1,1414 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  RESTRICTED
+  SUSPENDED
+  DELETION_PENDING
+}
+
+enum AdminQueuePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ProfileVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum SkillDirection {
+  TEACH
+  LEARN
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum SkillVerificationStatus {
+  NOT_REQUESTED
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+enum ProfileAccessStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  IGNORED
+  REVOKED
+  BLOCKED
+}
+
+enum PersonalizationMode {
+  ACTIVE
+  PAUSED
+  OFF
+}
+
+enum CommunityPostType {
+  TIP
+  PROJECT
+  PROGRESS
+  TUTORIAL
+}
+
+enum LearningPlanStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum CommunityPostStatus {
+  PUBLISHED
+  HIDDEN
+  REMOVED
+}
+
+enum CommunityVisibility {
+  PUBLIC
+  FOLLOWERS
+}
+
+enum CommunityReportStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+}
+
+enum NotificationCategory {
+  MESSAGE
+  SESSION
+  COMMUNITY
+  RECOMMENDATION
+  ACCOUNT
+}
+
+enum EmailDeliveryStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+enum LearningRequestStatus {
+  OPEN
+  CLOSED
+}
+
+enum ResponseVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum RequestResponseStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+  BLOCKED
+}
+
+enum ExchangeRequestType {
+  CREDIT_LEARNING
+  DIRECT_SWAP
+}
+
+enum ExchangeRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  BLOCKED
+}
+
+enum ConnectionStatus {
+  ACTIVE
+  CLOSED
+  BLOCKED
+}
+
+enum SafetyReportCategory {
+  HARASSMENT
+  SCAM
+  INAPPROPRIATE_CONTENT
+  SAFETY
+  SPAM
+  OTHER
+}
+
+enum SafetyReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum SessionStatus {
+  PROPOSED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW_REPORTED
+  NO_SHOW
+  DISPUTED
+}
+
+enum SessionProposalKind {
+  INITIAL
+  RESCHEDULE
+}
+
+enum SessionProposalStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+  SUPERSEDED
+  EXPIRED
+}
+
+enum SessionIncidentType {
+  EMERGENCY
+  NO_SHOW
+}
+
+enum SessionIncidentStatus {
+  OPEN
+  IN_REVIEW
+  ACCEPTED
+  REJECTED
+}
+
+enum VerificationKind {
+  IDENTITY
+  SKILL
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  DECLINED
+}
+
+enum SessionDisputeStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  APPEALED
+  CLOSED
+}
+
+enum DisputeOutcome {
+  RETURN_TO_LEARNER
+  PAY_TEACHER
+}
+
+enum AppealStatus {
+  PENDING
+  UPHELD
+  OVERTURNED
+  DISMISSED
+}
+
+enum CreditAccountType {
+  MEMBER_SPENDABLE
+  MEMBER_HELD
+  PLATFORM_RESERVE
+  PLATFORM_REVENUE
+  PURCHASE_CLEARING
+  PROMOTION_RESERVE
+  REFERRAL_RESERVE
+  GIFT_RESERVE
+  REFUND_CLEARING
+  ADMIN_ADJUSTMENT
+}
+
+enum CreditTransactionType {
+  PURCHASE
+  SESSION_HOLD
+  HOLD_RELEASE
+  SESSION_SETTLEMENT
+  REFUND
+  GIFT
+  PROMOTION
+  REFERRAL
+  PLATFORM_RETENTION
+  ADMIN_ADJUSTMENT
+  REVERSAL
+  DIRECT_SWAP_SETTLEMENT
+}
+
+enum CreditSource {
+  DIRECT_SWAP_DEPOSIT
+  DIRECT_SWAP_FORFEITURE
+  DIRECT_SWAP_COMPENSATION
+  SESSION_PAYMENT
+  SESSION_HOLD
+  HOLD_RELEASE
+  PURCHASED
+  TEACHING
+  PROMOTIONAL
+  REFERRAL
+  GIFT
+  REFUND
+  PLATFORM_RETENTION
+  ADMIN_ADJUSTMENT
+}
+
+enum CreditHoldStatus {
+  ACTIVE
+  RELEASED
+  SETTLED
+  FROZEN
+}
+
+enum DirectSwapStatus {
+  AWAITING_SESSIONS
+  AWAITING_DEPOSITS
+  IN_PROGRESS
+  MUTUAL_CANCELLATION_PENDING
+  RESOLUTION_PENDING
+  COMPLETED_PENDING_SETTLEMENT
+  MUTUALLY_CANCELLED
+  SETTLED
+  RESOLVED
+}
+
+model User {
+  id                               String                    @id @default(cuid())
+  authUserId                       String?                   @unique
+  status                           UserStatus                @default(ACTIVE)
+  createdAt                        DateTime                  @default(now())
+  updatedAt                        DateTime                  @updatedAt
+  authUser                         AuthUser?                 @relation(fields: [authUserId], references: [id], onDelete: Cascade)
+  identities                       Identity[]
+  memberProfile                    MemberProfile?
+  adminGrant                       AdminGrant?               @relation("AdminGrantee")
+  grantsCreated                    AdminGrant[]              @relation("AdminGrantor")
+  auditEventsCreated               SecurityAuditEvent[]      @relation("AuditActor")
+  auditEventsAboutUser             SecurityAuditEvent[]      @relation("AuditTarget")
+  skillListings                    SkillListing[]
+  accessRequestsSent               ProfileAccessRequest[]    @relation("AccessRequester")
+  accessRequestsReceived           ProfileAccessRequest[]    @relation("AccessOwner")
+  blocksCreated                    ProfileBlock[]            @relation("Blocker")
+  blocksReceived                   ProfileBlock[]            @relation("Blocked")
+  discoveryPreference              DiscoveryPreference?
+  savedSkills                      SavedSkill[]              @relation("SavedSkillOwner")
+  savedTeachers                    SavedTeacher[]            @relation("SavedTeacherOwner")
+  teacherSavedBy                   SavedTeacher[]            @relation("SavedTeacherTarget")
+  followedSkills                   FollowedSkill[]           @relation("FollowedSkillOwner")
+  followedPeople                   FollowedPerson[]          @relation("FollowedPersonOwner")
+  peopleFollowing                  FollowedPerson[]          @relation("FollowedPersonTarget")
+  dismissedRecommendations         DismissedRecommendation[] @relation("DismissalOwner")
+  dismissedByMembers               DismissedRecommendation[] @relation("DismissalTarget")
+  learningRequests                 LearningRequest[]         @relation("LearningRequestOwner")
+  learningResponses                LearningRequestResponse[] @relation("LearningResponseMember")
+  exchangeRequestsSent             ExchangeRequest[]         @relation("ExchangeRequester")
+  exchangeRequestsReceived         ExchangeRequest[]         @relation("ExchangeRecipient")
+  directSwapsRequested             DirectSwap[]              @relation("DirectSwapRequester")
+  directSwapsReceived              DirectSwap[]              @relation("DirectSwapRecipient")
+  directSwapsCancellationRequested DirectSwap[]              @relation("DirectSwapCancellationActor")
+  directSwapsResolved              DirectSwap[]              @relation("DirectSwapResolutionActor")
+  directSwapEvents                 DirectSwapEvent[]
+  connectionsAsLow                 Connection[]              @relation("ConnectionLowMember")
+  connectionsAsHigh                Connection[]              @relation("ConnectionHighMember")
+  conversationMemberships          ConversationParticipant[]
+  messagesSent                     Message[]                 @relation("MessageSender")
+  reportsCreated                   SafetyReport[]            @relation("ReportReporter")
+  reportsAboutMe                   SafetyReport[]            @relation("ReportTarget")
+  reviewsWritten                   Review[]                  @relation("ReviewAuthor")
+  trustEventsAuthored              TrustLevelEvent[]         @relation("TrustActor")
+  verificationRequests             VerificationRequest[]
+  verificationReviews              VerificationRequest[]     @relation("VerificationReviewer")
+  disputesOpened                   SessionDispute[]          @relation("DisputeOpener")
+  disputesAsOtherUser              SessionDispute[]          @relation("DisputeOtherUser")
+  disputesResolved                 SessionDispute[]          @relation("DisputeResolver")
+  appealsFiled                     DisputeAppeal[]           @relation("AppealAuthor")
+  appealsReviewed                  DisputeAppeal[]           @relation("AppealReviewer")
+  reviewsModerated                 Review[]                  @relation("ReviewModerator")
+  actionRateLimits                 ActionRateLimit[]
+  sessionsAsLearner                Session[]                 @relation("SessionLearner")
+  sessionsAsTeacher                Session[]                 @relation("SessionTeacher")
+  creditTransactions               CreditLedgerTransaction[] @relation("CreditTransactionActor")
+  sessionProposals                 SessionTimeProposal[]     @relation("SessionProposalAuthor")
+  sessionEvents                    SessionEvent[]            @relation("SessionEventActor")
+  sessionIncidentsCreated          SessionIncident[]         @relation("SessionIncidentReporter")
+  sessionIncidentsAboutMe          SessionIncident[]         @relation("SessionIncidentTarget")
+  sessionReminders                 SessionReminder[]
+  creditAccounts                   CreditAccount[]
+  creditHolds                      CreditHold[]
+  creditGiftsSent                  CreditGift[]              @relation("CreditGiftSender")
+  creditGiftsReceived              CreditGift[]              @relation("CreditGiftRecipient")
+  creditCodesCreated               CreditCode[]              @relation("CreditCodeCreator")
+  creditCodeRedemptions            CreditCodeRedemption[]
+  notificationsReceived            Notification[]            @relation("NotificationRecipient")
+  notificationsAuthored            Notification[]            @relation("NotificationActor")
+  notificationPreference           NotificationPreference?
+  communityPosts                   CommunityPost[]
+  learningPlans                    LearningPlan[]
+  communityReactions               CommunityPostReaction[]
+  communityComments                CommunityPostComment[]
+  communitySaves                   CommunityPostSave[]
+  communityReports                 CommunityContentReport[]  @relation("CommunityReportAuthor")
+  communityReportsReviewed         CommunityContentReport[]  @relation("CommunityReportReviewer")
+  mutedMembers                     MutedMember[]             @relation("MutedMemberOwner")
+  mutedByMembers                   MutedMember[]             @relation("MutedMemberTarget")
+  queueAssignments                 AdminQueueAssignment[]    @relation("QueueAssignedAdmin")
+  queueAssignmentsUpdated          AdminQueueAssignment[]    @relation("QueueAssignmentEditor")
+}
+
+model AuthUser {
+  id            String        @id
+  name          String
+  email         String        @unique
+  emailVerified Boolean       @default(false)
+  image         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  appUser       User?
+  sessions      AuthSession[]
+  accounts      AuthAccount[]
+}
+
+model AuthSession {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuthAccount {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuthVerification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Identity {
+  id        String   @id @default(cuid())
+  userId    String
+  provider  String
+  subject   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, subject])
+  @@index([userId])
+}
+
+model MemberProfile {
+  userId                   String            @id
+  displayName              String?
+  bio                      String?           @db.VarChar(500)
+  location                 String?           @db.VarChar(120)
+  timezone                 String            @default("UTC") @db.VarChar(80)
+  teachSkills              String[]          @default([])
+  learnSkills              String[]          @default([])
+  availability             Json?
+  isDiscoverable           Boolean           @default(true)
+  profileVisibility        ProfileVisibility @default(PUBLIC)
+  acceptLearningRequests   Boolean           @default(true)
+  acceptDirectSwapRequests Boolean           @default(true)
+  acceptMessages           Boolean           @default(true)
+  hiddenUntil              DateTime?
+  privacyReviewRequired    Boolean           @default(false)
+  hideRestoreReminder      Boolean           @default(false)
+  trustLevel               Int               @default(1)
+  verifiedAt               DateTime?
+  directSwapStrikeCount    Int               @default(0)
+  directSwapSuspendedUntil DateTime?
+  teacherStrikeCount       Int               @default(0)
+  teachingSuspendedUntil   DateTime?
+  bookingStrikeCount       Int               @default(0)
+  bookingRestrictedUntil   DateTime?
+  onboardingCompletedAt    DateTime?
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  user                     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewsReceived          Review[]          @relation("ReviewSubject")
+  trustEvents              TrustLevelEvent[] @relation("TrustMember")
+}
+
+model SkillCategory {
+  id        String         @id @default(cuid())
+  name      String         @unique @db.VarChar(80)
+  slug      String         @unique @db.VarChar(80)
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  listings  SkillListing[]
+}
+
+model SkillListing {
+  id                      String                    @id @default(cuid())
+  userId                  String
+  categoryId              String
+  direction               SkillDirection
+  name                    String                    @db.VarChar(100)
+  topics                  String[]                  @default([])
+  outcomes                String?                   @db.VarChar(500)
+  experienceLevel         ExperienceLevel           @default(BEGINNER)
+  yearsExperience         Int                       @default(0)
+  priceCredits            Int?
+  verificationStatus      SkillVerificationStatus   @default(NOT_REQUESTED)
+  verificationRequestedAt DateTime?
+  isActive                Boolean                   @default(true)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  user                    User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category                SkillCategory             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  savedBy                 SavedSkill[]
+  followedBy              FollowedSkill[]
+  learningRequests        LearningRequest[]
+  exchangeTargets         ExchangeRequest[]         @relation("ExchangeTargetSkill")
+  exchangeOffers          ExchangeRequest[]         @relation("ExchangeOfferSkill")
+  responseOffers          LearningRequestResponse[]
+  verificationRequests    VerificationRequest[]
+
+  @@unique([userId, direction, name])
+  @@index([userId, direction, isActive])
+  @@index([categoryId, direction, isActive])
+}
+
+model DiscoveryPreference {
+  userId                 String              @id
+  personalizationMode    PersonalizationMode @default(ACTIVE)
+  useTrustLevel          Boolean             @default(true)
+  minimumTrustLevel      Int                 @default(1)
+  minimumDirectSwapTrust Int                 @default(1)
+  updatedAt              DateTime            @updatedAt
+  user                   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([personalizationMode])
+}
+
+model SavedSkill {
+  userId         String
+  skillListingId String
+  createdAt      DateTime     @default(now())
+  user           User         @relation("SavedSkillOwner", fields: [userId], references: [id], onDelete: Cascade)
+  skillListing   SkillListing @relation(fields: [skillListingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillListingId])
+  @@index([skillListingId])
+}
+
+model SavedTeacher {
+  userId    String
+  teacherId String
+  createdAt DateTime @default(now())
+  user      User     @relation("SavedTeacherOwner", fields: [userId], references: [id], onDelete: Cascade)
+  teacher   User     @relation("SavedTeacherTarget", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@id([userId, teacherId])
+  @@index([teacherId])
+}
+
+model FollowedSkill {
+  userId         String
+  skillListingId String
+  createdAt      DateTime     @default(now())
+  user           User         @relation("FollowedSkillOwner", fields: [userId], references: [id], onDelete: Cascade)
+  skillListing   SkillListing @relation(fields: [skillListingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillListingId])
+  @@index([skillListingId])
+}
+
+model FollowedPerson {
+  userId    String
+  personId  String
+  createdAt DateTime @default(now())
+  user      User     @relation("FollowedPersonOwner", fields: [userId], references: [id], onDelete: Cascade)
+  person    User     @relation("FollowedPersonTarget", fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([userId, personId])
+  @@index([personId])
+}
+
+model DismissedRecommendation {
+  userId    String
+  targetId  String
+  reason    String?  @db.VarChar(250)
+  createdAt DateTime @default(now())
+  user      User     @relation("DismissalOwner", fields: [userId], references: [id], onDelete: Cascade)
+  target    User     @relation("DismissalTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@id([userId, targetId])
+  @@index([targetId])
+}
+
+model LearningRequest {
+  id              String                    @id @default(cuid())
+  ownerId         String
+  skillListingId  String?
+  skillName       String                    @db.VarChar(100)
+  title           String                    @db.VarChar(120)
+  scope           String                    @db.VarChar(1000)
+  expectedOutcome String                    @db.VarChar(500)
+  status          LearningRequestStatus     @default(OPEN)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  closedAt        DateTime?
+  owner           User                      @relation("LearningRequestOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  skillListing    SkillListing?             @relation(fields: [skillListingId], references: [id], onDelete: SetNull)
+  responses       LearningRequestResponse[]
+  activity        RequestActivity[]
+
+  @@index([status, createdAt])
+  @@index([ownerId, status, updatedAt])
+  @@index([skillListingId, status])
+}
+
+model Session {
+  id                   String                    @id @default(cuid())
+  exchangeRequestId    String
+  legNumber            Int                       @default(1)
+  learnerId            String
+  teacherId            String
+  status               SessionStatus             @default(PROPOSED)
+  startsAt             DateTime?
+  endsAt               DateTime?
+  bufferEndsAt         DateTime?
+  meetingProvider      String?                   @db.VarChar(30)
+  meetingLinkEncrypted String?                   @db.Text
+  learnerReminderOn    Boolean                   @default(true)
+  learnerReminderMins  Int                       @default(1440)
+  teacherReminderOn    Boolean                   @default(true)
+  teacherReminderMins  Int                       @default(1440)
+  cancellationReason   String?                   @db.VarChar(500)
+  completedAt          DateTime?
+  learnerCompletedAt   DateTime?
+  teacherCompletedAt   DateTime?
+  priceCredits         Int?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  exchangeRequest      ExchangeRequest           @relation(fields: [exchangeRequestId], references: [id], onDelete: Cascade)
+  learner              User                      @relation("SessionLearner", fields: [learnerId], references: [id], onDelete: Cascade)
+  teacher              User                      @relation("SessionTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  proposals            SessionTimeProposal[]
+  events               SessionEvent[]
+  incidents            SessionIncident[]
+  reminders            SessionReminder[]
+  creditHold           CreditHold?
+  creditTransactions   CreditLedgerTransaction[]
+  reviews              Review[]
+  dispute              SessionDispute?
+
+  @@unique([exchangeRequestId, legNumber])
+  @@index([exchangeRequestId])
+  @@index([learnerId, status, startsAt])
+  @@index([teacherId, status, startsAt])
+  @@index([status, startsAt])
+}
+
+model SessionTimeProposal {
+  id            String                @id @default(cuid())
+  sessionId     String
+  proposerId    String
+  kind          SessionProposalKind
+  status        SessionProposalStatus @default(PENDING)
+  startsAt      DateTime
+  timezone      String                @db.VarChar(80)
+  reason        String?               @db.VarChar(500)
+  responseDueAt DateTime
+  respondedAt   DateTime?
+  createdAt     DateTime              @default(now())
+  session       Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  proposer      User                  @relation("SessionProposalAuthor", fields: [proposerId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, status, createdAt])
+  @@index([responseDueAt, status])
+}
+
+model SessionEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  actorId   String?
+  eventKey  String   @db.VarChar(60)
+  fromState String?  @db.VarChar(40)
+  toState   String?  @db.VarChar(40)
+  summary   String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  actor     User?    @relation("SessionEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, createdAt])
+}
+
+model SessionIncident {
+  id                        String                @id @default(cuid())
+  sessionId                 String
+  reporterId                String
+  reportedUserId            String
+  type                      SessionIncidentType
+  details                   String                @db.VarChar(2000)
+  status                    SessionIncidentStatus @default(OPEN)
+  sessionStatusBeforeReport String                @db.VarChar(40)
+  adminNote                 String?               @db.VarChar(1000)
+  reviewedById              String?
+  reviewedAt                DateTime?
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  session                   Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  reporter                  User                  @relation("SessionIncidentReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser              User                  @relation("SessionIncidentTarget", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([sessionId, createdAt])
+}
+
+model Review {
+  id              String        @id @default(cuid())
+  sessionId       String
+  reviewerId      String
+  revieweeId      String
+  rating          Int
+  publicFeedback  String?       @db.VarChar(700)
+  privateFeedback String?       @db.VarChar(1200)
+  isPublicVisible Boolean       @default(true)
+  moderationNote  String?       @db.VarChar(700)
+  moderatedById   String?
+  createdAt       DateTime      @default(now())
+  session         Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  reviewer        User          @relation("ReviewAuthor", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee        MemberProfile @relation("ReviewSubject", fields: [revieweeId], references: [userId], onDelete: Cascade)
+  moderatedBy     User?         @relation("ReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, reviewerId])
+  @@index([revieweeId, createdAt])
+}
+
+model TrustLevelEvent {
+  id         String        @id @default(cuid())
+  userId     String
+  actorId    String?
+  fromLevel  Int
+  toLevel    Int
+  reasonCode String        @db.VarChar(60)
+  reason     String        @db.VarChar(500)
+  createdAt  DateTime      @default(now())
+  user       MemberProfile @relation("TrustMember", fields: [userId], references: [userId], onDelete: Cascade)
+  actor      User?         @relation("TrustActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+}
+
+model VerificationRequest {
+  id                  String             @id @default(cuid())
+  userId              String
+  skillListingId      String?
+  kind                VerificationKind
+  status              VerificationStatus @default(PENDING)
+  statement           String             @db.VarChar(700)
+  evidenceObjectKey   String?            @db.VarChar(500)
+  evidenceContentType String?            @db.VarChar(100)
+  evidenceSize        Int?
+  evidenceDeleteAt    DateTime?
+  submittedAt         DateTime           @default(now())
+  reviewedById        String?
+  reviewNote          String?            @db.VarChar(1000)
+  reviewedAt          DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillListing        SkillListing?      @relation(fields: [skillListingId], references: [id], onDelete: SetNull)
+  reviewedBy          User?              @relation("VerificationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, submittedAt])
+  @@index([userId, status, submittedAt])
+  @@index([evidenceDeleteAt])
+}
+
+model SessionDispute {
+  id             String               @id @default(cuid())
+  sessionId      String               @unique
+  openedById     String
+  otherUserId    String
+  status         SessionDisputeStatus @default(OPEN)
+  details        String               @db.VarChar(2000)
+  decisionReason String?              @db.VarChar(1200)
+  memberSummary  String?              @db.VarChar(600)
+  outcome        DisputeOutcome?
+  resolvedById   String?
+  resolvedAt     DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  appeal         DisputeAppeal?
+  session        Session              @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  openedBy       User                 @relation("DisputeOpener", fields: [openedById], references: [id], onDelete: Cascade)
+  otherUser      User                 @relation("DisputeOtherUser", fields: [otherUserId], references: [id], onDelete: Cascade)
+  resolvedBy     User?                @relation("DisputeResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([openedById, createdAt])
+  @@index([otherUserId, createdAt])
+}
+
+model DisputeAppeal {
+  id             String         @id @default(cuid())
+  disputeId      String         @unique
+  filedById      String
+  status         AppealStatus   @default(PENDING)
+  details        String         @db.VarChar(1500)
+  reviewedById   String?
+  decisionReason String?        @db.VarChar(1000)
+  reviewedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  dispute        SessionDispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  filedBy        User           @relation("AppealAuthor", fields: [filedById], references: [id], onDelete: Cascade)
+  reviewedBy     User?          @relation("AppealReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+model TrustPolicy {
+  id                          String   @id @default("default")
+  level2CompletedExchanges    Int      @default(3)
+  level3CompletedExchanges    Int      @default(10)
+  level4CompletedExchanges    Int      @default(25)
+  directSwapStrikeThreshold   Int      @default(3)
+  directSwapSuspensionDays    Int      @default(30)
+  teacherStrikeThreshold      Int      @default(3)
+  teacherSuspensionDays       Int      @default(30)
+  bookingRestrictionThreshold Int      @default(5)
+  bookingRestrictionDays      Int      @default(7)
+  updatedById                 String?
+  updatedAt                   DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
+model SessionReminder {
+  id           String    @id @default(cuid())
+  sessionId    String
+  userId       String
+  scheduledFor DateTime
+  sentAt       DateTime?
+  claimedAt    DateTime?
+  attempts     Int       @default(0)
+  createdAt    DateTime  @default(now())
+  session      Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId, scheduledFor])
+  @@index([scheduledFor, sentAt])
+}
+
+model CreditAccount {
+  id        String              @id @default(cuid())
+  code      String              @unique @db.VarChar(180)
+  userId    String?
+  type      CreditAccountType
+  createdAt DateTime            @default(now())
+  user      User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries   CreditLedgerEntry[]
+
+  @@index([userId, type])
+}
+
+model CreditLedgerTransaction {
+  id             String                    @id @default(cuid())
+  idempotencyKey String                    @unique @db.VarChar(180)
+  type           CreditTransactionType
+  actorId        String?
+  sessionId      String?
+  reason         String?                   @db.VarChar(500)
+  metadata       Json?
+  reversalOfId   String?
+  createdAt      DateTime                  @default(now())
+  actor          User?                     @relation("CreditTransactionActor", fields: [actorId], references: [id], onDelete: SetNull)
+  session        Session?                  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  reversalOf     CreditLedgerTransaction?  @relation("CreditReversal", fields: [reversalOfId], references: [id], onDelete: SetNull)
+  reversals      CreditLedgerTransaction[] @relation("CreditReversal")
+  entries        CreditLedgerEntry[]
+  holdCreated    CreditHold?               @relation("HoldCreationTransaction")
+  holdClosed     CreditHold?               @relation("HoldClosureTransaction")
+  creditGift     CreditGift?
+  creditCodeRedemption CreditCodeRedemption?
+
+  @@index([type, createdAt])
+  @@index([actorId, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([reversalOfId])
+}
+
+model CreditLedgerEntry {
+  id            String                  @id @default(cuid())
+  transactionId String
+  accountId     String
+  amount        Int
+  source        CreditSource
+  createdAt     DateTime                @default(now())
+  transaction   CreditLedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  account       CreditAccount           @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@unique([transactionId, accountId])
+  @@index([accountId, createdAt])
+  @@index([source, createdAt])
+}
+
+model CreditGift {
+  id                  String                  @id @default(cuid())
+  senderId            String
+  recipientId         String
+  amount              Int
+  message             String?                 @db.VarChar(240)
+  idempotencyKey      String                  @unique @db.VarChar(180)
+  ledgerTransactionId String                  @unique
+  createdAt           DateTime                @default(now())
+  sender              User                    @relation("CreditGiftSender", fields: [senderId], references: [id], onDelete: Restrict)
+  recipient           User                    @relation("CreditGiftRecipient", fields: [recipientId], references: [id], onDelete: Restrict)
+  ledgerTransaction   CreditLedgerTransaction @relation(fields: [ledgerTransactionId], references: [id], onDelete: Restrict)
+
+  @@index([senderId, createdAt])
+  @@index([recipientId, createdAt])
+}
+
+model CreditCode {
+  id              String                 @id @default(cuid())
+  codeHash        String                 @unique @db.VarChar(64)
+  codePrefix      String                 @db.VarChar(16)
+  amount          Int
+  maxRedemptions  Int
+  redemptionCount Int                    @default(0)
+  reason          String                 @db.VarChar(500)
+  isActive        Boolean                @default(true)
+  expiresAt       DateTime?
+  createdById     String
+  createdAt       DateTime               @default(now())
+  createdBy       User                   @relation("CreditCodeCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  redemptions     CreditCodeRedemption[]
+
+  @@index([isActive, expiresAt])
+  @@index([createdById, createdAt])
+}
+
+model CreditCodeRedemption {
+  id                  String                  @id @default(cuid())
+  creditCodeId        String
+  userId              String
+  ledgerTransactionId String                  @unique
+  createdAt           DateTime                @default(now())
+  creditCode          CreditCode              @relation(fields: [creditCodeId], references: [id], onDelete: Restrict)
+  user                User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  ledgerTransaction   CreditLedgerTransaction @relation(fields: [ledgerTransactionId], references: [id], onDelete: Restrict)
+
+  @@unique([creditCodeId, userId])
+  @@index([userId, createdAt])
+}
+
+model CreditHold {
+  id                 String                   @id @default(cuid())
+  sessionId          String                   @unique
+  userId             String
+  amount             Int
+  status             CreditHoldStatus         @default(ACTIVE)
+  holdTransactionId  String                   @unique
+  closeTransactionId String?                  @unique
+  createdAt          DateTime                 @default(now())
+  closedAt           DateTime?
+  session            Session                  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  user               User                     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  holdTransaction    CreditLedgerTransaction  @relation("HoldCreationTransaction", fields: [holdTransactionId], references: [id], onDelete: Restrict)
+  closeTransaction   CreditLedgerTransaction? @relation("HoldClosureTransaction", fields: [closeTransactionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+model LearningRequestResponse {
+  id             String                @id @default(cuid())
+  requestId      String
+  responderId    String
+  visibility     ResponseVisibility    @default(PRIVATE)
+  message        String                @db.VarChar(1000)
+  offeredSkillId String?
+  status         RequestResponseStatus @default(PENDING)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  decidedAt      DateTime?
+  request        LearningRequest       @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  responder      User                  @relation("LearningResponseMember", fields: [responderId], references: [id], onDelete: Cascade)
+  offeredSkill   SkillListing?         @relation(fields: [offeredSkillId], references: [id], onDelete: SetNull)
+
+  @@unique([requestId, responderId])
+  @@index([responderId, status, createdAt])
+}
+
+model ExchangeRequest {
+  id                      String                @id @default(cuid())
+  requesterId             String
+  recipientId             String
+  type                    ExchangeRequestType
+  status                  ExchangeRequestStatus @default(PENDING)
+  targetSkillId           String?
+  targetSkillName         String                @db.VarChar(100)
+  offerSkillId            String?
+  offerSkillName          String?               @db.VarChar(100)
+  targetSkillValueCredits Int?
+  offerSkillValueCredits  Int?
+  title                   String                @db.VarChar(120)
+  scope                   String                @db.VarChar(1000)
+  expectedOutcome         String                @db.VarChar(500)
+  message                 String?               @db.VarChar(1000)
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  respondedAt             DateTime?
+  requester               User                  @relation("ExchangeRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient               User                  @relation("ExchangeRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  targetSkill             SkillListing?         @relation("ExchangeTargetSkill", fields: [targetSkillId], references: [id], onDelete: SetNull)
+  offerSkill              SkillListing?         @relation("ExchangeOfferSkill", fields: [offerSkillId], references: [id], onDelete: SetNull)
+  activity                RequestActivity[]
+  sessions                Session[]
+  directSwap              DirectSwap?
+
+  @@index([requesterId, status, createdAt])
+  @@index([recipientId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+model DirectSwap {
+  id                        String            @id @default(cuid())
+  exchangeRequestId         String            @unique
+  requesterId               String
+  recipientId               String
+  status                    DirectSwapStatus  @default(AWAITING_SESSIONS)
+  targetSkillValueCredits   Int
+  offerSkillValueCredits    Int
+  requesterDepositCredits   Int
+  recipientDepositCredits   Int
+  cancellationRequestedById String?
+  cancellationRequestedAt   DateTime?
+  cancellationWasLate       Boolean?
+  cancellationConfirmedAt   DateTime?
+  cancellationReason        String?           @db.VarChar(500)
+  resolutionOutcome         String?           @db.VarChar(60)
+  resolutionReason          String?           @db.VarChar(1000)
+  resolvedById              String?
+  resolvedAt                DateTime?
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  exchangeRequest           ExchangeRequest   @relation(fields: [exchangeRequestId], references: [id], onDelete: Cascade)
+  requester                 User              @relation("DirectSwapRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  recipient                 User              @relation("DirectSwapRecipient", fields: [recipientId], references: [id], onDelete: Restrict)
+  cancellationRequestedBy   User?             @relation("DirectSwapCancellationActor", fields: [cancellationRequestedById], references: [id], onDelete: SetNull)
+  resolvedBy                User?             @relation("DirectSwapResolutionActor", fields: [resolvedById], references: [id], onDelete: SetNull)
+  events                    DirectSwapEvent[]
+
+  @@index([status, updatedAt])
+  @@index([requesterId, status])
+  @@index([recipientId, status])
+}
+
+model DirectSwapEvent {
+  id           String     @id @default(cuid())
+  directSwapId String
+  actorId      String?
+  eventKey     String     @db.VarChar(60)
+  fromState    String?    @db.VarChar(40)
+  toState      String?    @db.VarChar(40)
+  summary      String     @db.VarChar(500)
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+  directSwap   DirectSwap @relation(fields: [directSwapId], references: [id], onDelete: Cascade)
+  actor        User?      @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([directSwapId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model RequestActivity {
+  id                String           @id @default(cuid())
+  learningRequestId String?
+  exchangeRequestId String?
+  actorId           String
+  eventKey          String           @db.VarChar(60)
+  fromState         String?          @db.VarChar(40)
+  toState           String?          @db.VarChar(40)
+  summary           String?          @db.VarChar(300)
+  createdAt         DateTime         @default(now())
+  learningRequest   LearningRequest? @relation(fields: [learningRequestId], references: [id], onDelete: Cascade)
+  exchangeRequest   ExchangeRequest? @relation(fields: [exchangeRequestId], references: [id], onDelete: Cascade)
+
+  @@index([learningRequestId, createdAt])
+  @@index([exchangeRequestId, createdAt])
+}
+
+model Connection {
+  id            String           @id @default(cuid())
+  memberLowId   String
+  memberHighId  String
+  status        ConnectionStatus @default(ACTIVE)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  memberLow     User             @relation("ConnectionLowMember", fields: [memberLowId], references: [id], onDelete: Cascade)
+  memberHigh    User             @relation("ConnectionHighMember", fields: [memberHighId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+
+  @@unique([memberLowId, memberHighId])
+  @@index([memberLowId, status])
+  @@index([memberHighId, status])
+}
+
+model Conversation {
+  id            String                    @id @default(cuid())
+  connectionId  String
+  isActive      Boolean                   @default(true)
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  lastMessageAt DateTime                  @default(now())
+  connection    Connection                @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  participants  ConversationParticipant[]
+  messages      Message[]
+  reports       SafetyReport[]
+
+  @@index([connectionId, isActive, lastMessageAt])
+}
+
+model ConversationParticipant {
+  conversationId String
+  userId         String
+  lastReadAt     DateTime     @default(now())
+  unreadCount    Int          @default(0)
+  joinedAt       DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId, lastReadAt])
+}
+
+model Message {
+  id             String         @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String         @db.VarChar(4000)
+  createdAt      DateTime       @default(now())
+  conversation   Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User           @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  reports        SafetyReport[]
+
+  @@index([conversationId, createdAt])
+}
+
+model SafetyReport {
+  id             String               @id @default(cuid())
+  reporterId     String
+  reportedUserId String
+  category       SafetyReportCategory
+  details        String               @db.VarChar(2000)
+  context        String?              @db.VarChar(1000)
+  status         SafetyReportStatus   @default(OPEN)
+  conversationId String?
+  messageId      String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  reporter       User                 @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser   User                 @relation("ReportTarget", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  conversation   Conversation?        @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  message        Message?             @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([reportedUserId, createdAt])
+}
+
+model ActionRateLimit {
+  userId      String
+  action      String   @db.VarChar(40)
+  windowStart DateTime
+  count       Int      @default(0)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, action, windowStart])
+  @@index([windowStart])
+}
+
+model NotificationPreference {
+  userId               String   @id
+  inAppMessages        Boolean  @default(true)
+  inAppSessions        Boolean  @default(true)
+  inAppCommunity       Boolean  @default(true)
+  inAppRecommendations Boolean  @default(true)
+  inAppAccount         Boolean  @default(true)
+  emailMessages        Boolean  @default(true)
+  emailSessions        Boolean  @default(true)
+  emailCommunity       Boolean  @default(false)
+  emailRecommendations Boolean  @default(false)
+  emailAccount         Boolean  @default(false)
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id             String               @id @default(cuid())
+  recipientId    String
+  actorId        String?
+  category       NotificationCategory
+  eventKey       String               @db.VarChar(80)
+  idempotencyKey String               @unique @db.VarChar(180)
+  title          String               @db.VarChar(140)
+  body           String               @db.VarChar(500)
+  href           String               @db.VarChar(300)
+  inApp          Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  readAt         DateTime?
+  recipient      User                 @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor          User?                @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  emailDelivery  EmailDelivery?
+
+  @@index([recipientId, readAt, createdAt])
+  @@index([eventKey, createdAt])
+}
+
+model EmailDelivery {
+  id             String              @id @default(cuid())
+  notificationId String              @unique
+  status         EmailDeliveryStatus @default(PENDING)
+  attempts       Int                 @default(0)
+  nextAttemptAt  DateTime            @default(now())
+  claimedAt      DateTime?
+  sentAt         DateTime?
+  lastError      String?             @db.VarChar(500)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  notification   Notification        @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+}
+
+model CommunityPost {
+  id         String                   @id @default(cuid())
+  authorId   String
+  type       CommunityPostType
+  visibility CommunityVisibility      @default(PUBLIC)
+  status     CommunityPostStatus      @default(PUBLISHED)
+  title      String                   @db.VarChar(120)
+  body       String                   @db.VarChar(2000)
+  skillTags  String[]                 @default([])
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+  author     User                     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reactions  CommunityPostReaction[]
+  comments   CommunityPostComment[]
+  saves      CommunityPostSave[]
+  reports    CommunityContentReport[]
+
+  @@index([status, visibility, createdAt])
+  @@index([authorId, status, createdAt])
+}
+
+model LearningPlan {
+  id          String             @id @default(cuid())
+  ownerId     String
+  title       String             @db.VarChar(120)
+  skillName   String             @db.VarChar(100)
+  goal        String             @db.VarChar(700)
+  targetDate  DateTime?
+  status      LearningPlanStatus @default(ACTIVE)
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  owner       User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  steps       LearningPlanStep[]
+
+  @@index([ownerId, status, updatedAt])
+}
+
+model LearningPlanStep {
+  id          String       @id @default(cuid())
+  planId      String
+  title       String       @db.VarChar(120)
+  details     String?      @db.VarChar(500)
+  reflection  String?      @db.VarChar(500)
+  targetDate  DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  plan        LearningPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, createdAt])
+}
+
+model CommunityPostReaction {
+  postId    String
+  userId    String
+  createdAt DateTime      @default(now())
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@index([userId, createdAt])
+}
+
+model CommunityPostComment {
+  id        String        @id @default(cuid())
+  postId    String
+  userId    String
+  body      String        @db.VarChar(1000)
+  createdAt DateTime      @default(now())
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model CommunityPostSave {
+  postId    String
+  userId    String
+  createdAt DateTime      @default(now())
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@index([userId, createdAt])
+}
+
+model CommunityContentReport {
+  id           String                @id @default(cuid())
+  postId       String
+  reporterId   String
+  category     String                @db.VarChar(40)
+  details      String                @db.VarChar(1000)
+  status       CommunityReportStatus @default(OPEN)
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime              @default(now())
+  post         CommunityPost         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter     User                  @relation("CommunityReportAuthor", fields: [reporterId], references: [id], onDelete: Cascade)
+  reviewedBy   User?                 @relation("CommunityReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@unique([postId, reporterId])
+  @@index([status, createdAt])
+}
+
+model MutedMember {
+  userId      String
+  mutedUserId String
+  createdAt   DateTime @default(now())
+  user        User     @relation("MutedMemberOwner", fields: [userId], references: [id], onDelete: Cascade)
+  mutedUser   User     @relation("MutedMemberTarget", fields: [mutedUserId], references: [id], onDelete: Cascade)
+
+  @@id([userId, mutedUserId])
+  @@index([mutedUserId])
+}
+
+model ProfileAccessRequest {
+  id          String              @id @default(cuid())
+  requesterId String
+  ownerId     String
+  status      ProfileAccessStatus @default(PENDING)
+  reason      String?             @db.VarChar(500)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  decidedAt   DateTime?
+  requester   User                @relation("AccessRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  owner       User                @relation("AccessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, ownerId])
+  @@index([ownerId, status, createdAt])
+  @@index([requesterId, status])
+}
+
+model ProfileBlock {
+  id            String   @id @default(cuid())
+  blockerId     String
+  blockedUserId String
+  reason        String?  @db.VarChar(500)
+  createdAt     DateTime @default(now())
+  blocker       User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedUser   User     @relation("Blocked", fields: [blockedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedUserId])
+  @@index([blockedUserId])
+}
+
+model AdminGrant {
+  userId      String   @id
+  grantedById String?
+  reason      String   @db.VarChar(500)
+  grantedAt   DateTime @default(now())
+  user        User     @relation("AdminGrantee", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy   User?    @relation("AdminGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@index([grantedById])
+}
+
+model AdminQueueAssignment {
+  id          String             @id @default(cuid())
+  itemType    String             @db.VarChar(30)
+  itemId      String             @db.VarChar(100)
+  priority    AdminQueuePriority @default(NORMAL)
+  assigneeId  String?
+  updatedById String
+  reason      String             @db.VarChar(500)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  assignee    User?              @relation("QueueAssignedAdmin", fields: [assigneeId], references: [id], onDelete: SetNull)
+  updatedBy   User               @relation("QueueAssignmentEditor", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@unique([itemType, itemId])
+  @@index([assigneeId, priority, updatedAt])
+  @@index([itemType, priority, updatedAt])
+}
+
+model SecurityAuditEvent {
+  id           String   @id @default(cuid())
+  eventKey     String   @db.VarChar(80)
+  actorId      String?
+  targetUserId String?
+  reason       String?  @db.VarChar(500)
+  details      Json?
+  createdAt    DateTime @default(now())
+  actor        User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetUser   User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([eventKey, createdAt])
+  @@index([targetUserId, createdAt])
+}

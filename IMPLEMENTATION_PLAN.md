@@ -2,7 +2,7 @@
 
 **Status:** Working plan derived from the master PRD in [`SkillSwap.md`](./SkillSwap.md).  
 **Product baseline:** one Member account type with both teaching and learning capabilities, plus a separate Admin account type.  
-**Current build:** a responsive static prototype with sample data, browser-local persistence, and no production authentication or backend.
+**Current build:** an authenticated Next.js App Router application in `skillswap-app/` with Member/Admin authorization, PostgreSQL-backed product workflows, and checked-in migrations. The dedicated local PostgreSQL instance is running; all 19 checked-in migrations are applied, and Prisma reports no schema differences. Credit posting remains disabled pending product-policy approval.
 
 This plan turns the PRD into a build sequence with explicit decisions, dependencies, and exit criteria. The PRD remains the source of truth when prototype copy or implementation details conflict with it. Complete each phase’s exit criteria before moving to the next; defer later features until the MVP loop works end to end.
 
@@ -46,45 +46,46 @@ Replace sample balances, request confirmations, sessions, and admin queues with 
 
 ## Decisions to settle before production implementation
 
-Resolve these in Phase 0 and record any approved changes here. Do not let edge cases be decided ad hoc in payment or dispute code.
+Resolve these before Phase 2. The working proposals, state diagrams, authorization matrix, and sign-off gates are in [`PHASE_1_DECISIONS.md`](./PHASE_1_DECISIONS.md). Do not let edge cases be decided ad hoc in payment or dispute code.
 
-| Question | PRD baseline | Decision needed |
-|---|---|---|
-| Direct-swap deposits for odd credit values | Each learner deposits half the value of the skill they want | Define rounding (`ceil` recommended for the deposit) and minimum deposit; show the amount before confirmation. |
-| Meaning of the 1-credit platform retention | One credit retained per completed credit-based session | Confirm who funds the retained credit when the listed price is only 1 credit, and whether the teacher’s displayed price is gross or net. |
-| Direct-swap cancellation timing | Late cancellation changes how deposits are allocated | Define “late” consistently (the session policy uses 24 hours), specify outcomes for every session order, and make mutual cancellation return both deposits. |
-| Emergency compensation | Accepted emergency receives half the affected session value | Define rounding, funding source, review time, and how this interacts with a held deposit and completed first leg of a swap. |
-| No-show strike windows | Three teacher no-shows suspend teaching for three weeks; three learner no-shows restrict booking for a month | Define whether counts are lifetime or time-windowed, appeal path, and admin override/audit requirements. |
-| Trust Level formula | Considers exchanges, ratings, verification, behavior, and activity | Define inputs, minimum sample sizes, decay, review/appeal, and explainable member-facing reason text. Keep private dispute details private. |
-| Private profile discovery | Basic details can appear; access can be requested | Finalize which fields are public, what access reveals, requester/owner notifications, expiration, and block interaction. |
-| Profile hide/restore | Existing activity continues; restore automatically after 3 months | Define reminder, automatic restore consent, and which controls must be chosen again. |
-| Verification scope | General and skill verification are optional | Define what evidence is collected, who can see it, retention/deletion, and whether identity documents are needed for MVP. Prefer collecting the minimum. |
-| Credit purchase and currency display | Reference price `$2 = 6 credits`; purchases do not expire | Select payment provider and supported launch countries/currencies after fee, refund, tax, and legal review. Do not add cash-out. |
-| Live meeting link | Zoom or Google Meet initially | Decide whether Members supply their own link or SkillSwap creates one; specify visibility, link retention, and abuse reporting. |
-| Reminder default | One default reminder, user-adjustable | Pick default lead time and delivery channel; preserve local time-zone display. |
+| Question                                   | PRD baseline                                                                                                 | Decision needed                                                                                                                                             |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Direct-swap deposits for odd credit values | Each learner deposits half the value of the skill they want                                                  | Define rounding (`ceil` recommended for the deposit) and minimum deposit; show the amount before confirmation.                                              |
+| Meaning of the 1-credit platform retention | One credit retained per completed credit-based session                                                       | Confirm who funds the retained credit when the listed price is only 1 credit, and whether the teacher’s displayed price is gross or net.                    |
+| Direct-swap cancellation timing            | Late cancellation changes how deposits are allocated                                                         | Define “late” consistently (the session policy uses 24 hours), specify outcomes for every session order, and make mutual cancellation return both deposits. |
+| Emergency compensation                     | Accepted emergency receives half the affected session value                                                  | Define rounding, funding source, review time, and how this interacts with a held deposit and completed first leg of a swap.                                 |
+| No-show strike windows                     | Three teacher no-shows suspend teaching for three weeks; three learner no-shows restrict booking for a month | Define whether counts are lifetime or time-windowed, appeal path, and admin override/audit requirements.                                                    |
+| Trust Level formula                        | Considers exchanges, ratings, verification, behavior, and activity                                           | Define inputs, minimum sample sizes, decay, review/appeal, and explainable member-facing reason text. Keep private dispute details private.                 |
+| Private profile discovery                  | Basic details can appear; access can be requested                                                            | Finalize which fields are public, what access reveals, requester/owner notifications, expiration, and block interaction.                                    |
+| Profile hide/restore                       | Existing activity continues; restore automatically after 3 months                                            | Define reminder, automatic restore consent, and which controls must be chosen again.                                                                        |
+| Verification scope                         | General and skill verification are optional                                                                  | Define what evidence is collected, who can see it, retention/deletion, and whether identity documents are needed for MVP. Prefer collecting the minimum.    |
+| Credit purchase and currency display       | Reference price `$2 = 6 credits`; purchases do not expire                                                    | Select payment provider and supported launch countries/currencies after fee, refund, tax, and legal review. Do not add cash-out.                            |
+| Live meeting link                          | Zoom or Google Meet initially                                                                                | Decide whether Members supply their own link or SkillSwap creates one; specify visibility, link retention, and abuse reporting.                             |
+| Reminder default                           | One default reminder, user-adjustable                                                                        | Pick default lead time and delivery channel; preserve local time-zone display.                                                                              |
 
 ## Recommended architecture decisions
 
 These are recommendations for a first web MVP, not additional product commitments. Confirm them in Phase 1 before scaffolding production services.
 
-| Area | Recommendation | Reason / constraint |
-|---|---|---|
-| Application shape | One TypeScript web application using the Next.js App Router | Keeps member UI, admin UI, server rendering, and mutations in one deployable application. Keep business rules in service modules rather than page components. |
-| UI | React with a tokenized CSS/design-system layer; adopt a component library only if it preserves accessibility and visual consistency | The prototype is already HTML/CSS/JS. Migrate its useful patterns into components; avoid adding a heavy UI dependency before validating the system. |
-| Data store | PostgreSQL | Profiles, skills, requests, sessions, disputes, and ledger events are relational and need constraints and atomic multi-row updates. |
-| Data access | Prisma ORM, with the version pinned during foundation work | Fits typed relational access and migrations. Wrap multi-record credit/session operations in database transactions; add database constraints for invariants that can be expressed there. |
-| Authentication | Managed identity provider (Clerk is the initial recommendation, matching the earlier project direction); keep the app’s Member/Admin role in the application database | Provider owns sign-in and identity proof. The application owns product authorization. Admin must be granted by an authorized operator, never by a client form or self-selected profile field. |
-| Authorization | Central server-side Data Access Layer (DAL) with `requireMember`, `requireAdmin`, and resource-ownership checks | Hiding buttons or guarding only a layout is insufficient. Every server mutation, handler, and sensitive read checks identity, role, and object-level access. |
-| Server/client boundary | Server Components for server-owned reads; Server Actions for app mutations; Route Handlers for webhooks and integrations | Treat every exported Server Action and Route Handler as a public endpoint: validate input, authorize, and return only necessary data. |
-| Data validation | Shared typed schemas at server boundaries; validate again on the server even when a form validates in the browser | All client inputs, IDs, state transitions, and prices are untrusted. Use explicit DTOs so private profile fields never leak into discovery responses. |
-| Chat | Persist messages in PostgreSQL first; use a managed realtime channel or polling only after message authorization and persistence are correct | Realtime delivery is an optimization. A message must remain durable, scoped to a conversation, and unavailable to blocked or disconnected users. |
-| Background work | A small job/queue service for reminders, 3-month profile restoration, referral qualification, and retries | These events must run even when a user is offline and must be idempotent. Do not rely on an open browser tab or in-process timers. |
-| Meeting integration | Store a validated provider/link reference; start with user-supplied Meet/Zoom links unless a provider API is explicitly selected | The PRD does not require video infrastructure. Avoid building a native room before the exchange loop is proven. |
-| File storage | Private object storage with short-lived signed access for any approved evidence; no permanent public URLs | Only add upload flows after the verification evidence/retention policy is defined. Never store uploads in an ephemeral application filesystem. |
-| Credit records | Append-only ledger entries plus explicit holds/reservations; derive the authoritative balance from ledger and holds | Do not mutate a balance without a corresponding reasoned ledger event. Use idempotency keys and transaction boundaries for settlement/refund. |
-| Payments | Add a hosted payment-provider flow only after country, pricing, refund, and policy decisions | The product’s non-cashable credit rules are a core invariant. Keep payment records separate from earned and promotional credit events. |
-| Deployment | Local development, isolated preview/staging, and production; managed PostgreSQL with backups and migrations | Production requires persistent storage, secret management, observability, rollback, and a tested restore procedure. No secrets in the repository. |
-| Analytics | First-party event schema for activation, matching, requests, completed exchanges, repeat learning, safety, and credit operations | Measure knowledge exchange and marketplace health, not only clicks. Avoid collecting message content or sensitive evidence as analytics. |
+| Area                   | Recommendation                                                                                                                                                        | Reason / constraint                                                                                                                                                                                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Application shape      | One TypeScript web application using the Next.js App Router                                                                                                           | Keeps member UI, admin UI, server rendering, and mutations in one deployable application. Keep business rules in service modules rather than page components.                                                                                                                           |
+| UI                     | React with a tokenized CSS/design-system layer; adopt a component library only if it preserves accessibility and visual consistency                                   | The prototype is already HTML/CSS/JS. Migrate its useful patterns into components; avoid adding a heavy UI dependency before validating the system.                                                                                                                                     |
+| Data store             | PostgreSQL                                                                                                                                                            | Profiles, skills, requests, sessions, disputes, and ledger events are relational and need constraints and atomic multi-row updates.                                                                                                                                                     |
+| Data access            | Prisma ORM, with the version pinned during foundation work                                                                                                            | Fits typed relational access and migrations. Wrap multi-record credit/session operations in database transactions; add database constraints for invariants that can be expressed there.                                                                                                 |
+| Authentication         | Managed identity provider (Clerk is the initial recommendation, matching the earlier project direction); keep the app’s Member/Admin role in the application database | Provider owns sign-in and identity proof. The application owns product authorization. Admin must be granted by an authorized operator, never by a client form or self-selected profile field.                                                                                           |
+| Authorization          | Central server-side Data Access Layer (DAL) with `requireMember`, `requireAdmin`, and resource-ownership checks                                                       | Hiding buttons or guarding only a layout is insufficient. Every server mutation, handler, and sensitive read checks identity, role, and object-level access.                                                                                                                            |
+| Server/client boundary | Server Components for server-owned reads; Server Actions for app mutations; Route Handlers for webhooks and integrations                                              | Treat every exported Server Action and Route Handler as a public endpoint: validate input, authorize, and return only necessary data.                                                                                                                                                   |
+| Data validation        | Shared typed schemas at server boundaries; validate again on the server even when a form validates in the browser                                                     | All client inputs, IDs, state transitions, and prices are untrusted. Use explicit DTOs so private profile fields never leak into discovery responses.                                                                                                                                   |
+| Chat                   | Persist messages in PostgreSQL first; use a managed realtime channel or polling only after message authorization and persistence are correct                          | Realtime delivery is an optimization. A message must remain durable, scoped to a conversation, and unavailable to blocked or disconnected users.                                                                                                                                        |
+| Background work        | A small job/queue service for reminders, 3-month profile restoration, referral qualification, and retries                                                             | These events must run even when a user is offline and must be idempotent. Do not rely on an open browser tab or in-process timers.                                                                                                                                                      |
+| Email delivery         | ZeptoMail for transactional email, called by the notification/job layer                                                                                               | Use for verification, account recovery, session reminders, and critical activity notices. Keep delivery credentials server-side; retry and deduplicate jobs and honor notification preferences.                                                                                         |
+| Meeting integration    | Store a validated provider/link reference; start with user-supplied Meet/Zoom links unless a provider API is explicitly selected                                      | The PRD does not require video infrastructure. Avoid building a native room before the exchange loop is proven.                                                                                                                                                                         |
+| File storage           | Cloudflare R2 private object storage with short-lived signed access for any approved evidence; no permanent public URLs                                               | Only add upload flows after the verification evidence/retention policy is defined. Never store uploads in an ephemeral application filesystem or expose evidence through public object URLs.                                                                                            |
+| Credit records         | Append-only ledger entries plus explicit holds/reservations; derive the authoritative balance from ledger and holds                                                   | Do not mutate a balance without a corresponding reasoned ledger event. Use idempotency keys and transaction boundaries for settlement/refund.                                                                                                                                           |
+| Payments               | Add a hosted payment-provider flow only after country, pricing, refund, and policy decisions                                                                          | The product’s non-cashable credit rules are a core invariant. Keep payment records separate from earned and promotional credit events.                                                                                                                                                  |
+| Deployment             | Host the application on the designated local device; use managed PostgreSQL with backups and migrations                                                               | The local device is the application host, not the file store. Global access requires a stable internet connection, public HTTPS access, secure network configuration, monitoring, restart/recovery procedures, and a tested backup/restore process. Keep secrets out of the repository. |
+| Analytics              | First-party event schema for activation, matching, requests, completed exchanges, repeat learning, safety, and credit operations                                      | Measure knowledge exchange and marketplace health, not only clicks. Avoid collecting message content or sensitive evidence as analytics.                                                                                                                                                |
 
 ### System boundary
 
@@ -95,10 +96,11 @@ flowchart LR
   Web --> Auth[Identity provider]
   Web --> DAL[Server authorization and data layer]
   DAL --> DB[(PostgreSQL)]
-  DAL --> Store[Private object storage]
+  DAL --> Store[Cloudflare R2 private object storage]
   Web --> Jobs[Background jobs]
   Jobs --> DB
-  Jobs --> Notify[Email and in-app notifications]
+  Jobs --> Notify[Email dispatch and in-app notifications]
+  Notify --> Zepto[ZeptoMail]
   Web --> Pay[Payment provider]
   Pay --> Webhook[Verified payment webhooks]
   Webhook --> DAL
@@ -109,25 +111,27 @@ flowchart LR
 
 Use normalized relational records with explicit state transitions. Names below are conceptual; validate final fields and indexes during schema design.
 
-| Domain | Core records | Key rules |
-|---|---|---|
-| Identity | `User`, `MemberProfile`, `AdminGrant`, `UserPreference` | One product account per identity-provider subject. Default role is Member. Admin grants are server-created and audited. |
-| Skills | `Skill`, `SkillCategory`, `UserSkill` | One Member owns both teach and learn listings. A listing stores direction, level, topics/outcomes, experience, and optional credit price. |
-| Discovery | `Follow`, `SavedItem`, `RecommendationFeedback` | Saves/follows are separate from a connection; recommendation dismissals are recorded without exposing private reasons. |
-| Privacy | `VisibilitySetting`, `ProfileAccessRequest`, `Block` | Central visibility policy; block suppresses messaging and requests and removes follow/connection links per PRD. |
-| Exchange | `LearningRequest`, `ExchangeRequest`, `SwapLeg`, `Connection` | Requests have an explicit finite state machine, participants, direction, and cancellation reasons. Direct swap has two linked legs. |
-| Communication | `Conversation`, `ConversationParticipant`, `Message`, `Report` | Conversation membership is checked on every read/write. Block and safety states can freeze communication. |
-| Sessions | `Session`, `SessionParticipant`, `RescheduleProposal`, `SessionEvent` | Store instants in UTC and the creator/participant IANA time zones. Accept/reschedule/cancel are explicit transitions. |
-| Credits | `CreditLedgerEntry`, `CreditHold`, `CreditPurchase`, `CreditGift`, `Promotion` | Ledger is append-only. Holds are reservations, not earnings. Every credit movement has a source, recipient, reason, and idempotency key. |
-| Trust and safety | `Review`, `PrivateFeedback`, `Verification`, `TrustEvent`, `Dispute`, `Appeal`, `Strike`, `Suspension`, `AuditLog` | Private evidence and dispute history are access-restricted. Admin actions record actor, target, reason, and time. |
-| Community | `Post`, `Comment`, `Reaction`, `ContentReport` | Learning-focused content; moderation, blocking, and visibility rules apply before broad feed ranking. |
-| Operations | `Notification`, `NotificationPreference`, `Job`, `WebhookEvent`, `MetricEvent` | Jobs and webhooks are deduplicated; delivery failures are retryable and observable. |
+| Domain           | Core records                                                                                                       | Key rules                                                                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity         | `User`, `MemberProfile`, `AdminGrant`, `UserPreference`                                                            | One product account per identity-provider subject. Default role is Member. Admin grants are server-created and audited.                   |
+| Skills           | `Skill`, `SkillCategory`, `UserSkill`                                                                              | One Member owns both teach and learn listings. A listing stores direction, level, topics/outcomes, experience, and optional credit price. |
+| Discovery        | `Follow`, `SavedItem`, `RecommendationFeedback`                                                                    | Saves/follows are separate from a connection; recommendation dismissals are recorded without exposing private reasons.                    |
+| Privacy          | `VisibilitySetting`, `ProfileAccessRequest`, `Block`                                                               | Central visibility policy; block suppresses messaging and requests and removes follow/connection links per PRD.                           |
+| Exchange         | `LearningRequest`, `ExchangeRequest`, `SwapLeg`, `Connection`                                                      | Requests have an explicit finite state machine, participants, direction, and cancellation reasons. Direct swap has two linked legs.       |
+| Communication    | `Conversation`, `ConversationParticipant`, `Message`, `Report`                                                     | Conversation membership is checked on every read/write. Block and safety states can freeze communication.                                 |
+| Sessions         | `Session`, `SessionParticipant`, `RescheduleProposal`, `SessionEvent`                                              | Store instants in UTC and the creator/participant IANA time zones. Accept/reschedule/cancel are explicit transitions.                     |
+| Credits          | `CreditLedgerEntry`, `CreditHold`, `CreditPurchase`, `CreditGift`, `Promotion`                                     | Ledger is append-only. Holds are reservations, not earnings. Every credit movement has a source, recipient, reason, and idempotency key.  |
+| Trust and safety | `Review`, `PrivateFeedback`, `Verification`, `TrustEvent`, `Dispute`, `Appeal`, `Strike`, `Suspension`, `AuditLog` | Private evidence and dispute history are access-restricted. Admin actions record actor, target, reason, and time.                         |
+| Community        | `Post`, `Comment`, `Reaction`, `ContentReport`                                                                     | Learning-focused content; moderation, blocking, and visibility rules apply before broad feed ranking.                                     |
+| Operations       | `Notification`, `NotificationPreference`, `Job`, `WebhookEvent`, `MetricEvent`                                     | Jobs and webhooks are deduplicated; delivery failures are retryable and observable.                                                       |
 
 ## Phased roadmap
 
 Every phase includes a working demo or operational artifact. The exit checks include automated tests where they protect important behavior; test creation and execution happen during implementation, not in this planning document.
 
 ### Phase 0 — Design system and UX foundation
+
+**Status:** In progress. Initial palette tokens, the recolored generated logo, component showcase, prototype journey audit, and screen map are recorded in [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md), [`design-system.html`](./design-system.html), and the `skillswap-*.png` assets. The rendered responsive/accessibility review remains open.
 
 **Goal:** Replace one-off prototype styling with a coherent, accessible interface system before growing the screen count.
 
@@ -149,6 +153,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 
 ### Phase 1 — Product and architecture decisions
 
+**Status:** Product-policy baseline approved on 2026-10-10 as `phase1-approved-v1`, including the proposed credit/cancellation outcomes and data-retention rules. Payment-provider/launch-region decisions, auth confirmation, local-device public hosting feasibility, legal/privacy review, and Phase 0's responsive/accessibility review remain open.
+
 **Goal:** Freeze the domain rules and system boundaries before schema or production APIs are written.
 
 **Work**
@@ -167,30 +173,34 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 
 ### Phase 2 — Engineering foundation
 
+**Status:** In progress. The non-production Next.js app shell, provider-neutral identity/Admin-grant schema, initial PostgreSQL migration, CI/security workflows, and local-device/R2 runbooks are in `skillswap-app/`, `.github/`, and `docs/operations/`. Dependencies are locked, Prisma generation succeeds, the development server starts locally, and PostgreSQL migration deployment has now been exercised through all 19 checked-in migrations with no schema drift. The local build uses Webpack and Next's project-local WASM compiler cache because the Windows native SWC binary is incompatible in this environment. GitHub CI and local-device public deployment/recovery remain unverified. Phase 1 sign-offs for launch region/payment evaluation and product accounting policies remain open; payment, upload configuration, and public-host deployment remain later-phase work.
+
 **Goal:** Turn the prototype repository into a maintainable application foundation.
 
 **Work**
 
 - Create the app shell, route groups, component and domain folders, type checking, linting, formatting, and local environment instructions.
 - Migrate prototype tokens and primitives into the chosen app framework without introducing prototype sample state as production data.
-- Add development, preview, staging, and production environment separation; document secret names without committing secret values.
+- Add development, preview, staging, and production environment separation on the local-device host; document secret names without committing secret values.
 - Add CI for lint, typecheck, production build, and focused automated tests; configure dependency update and secret scanning.
 - Add database connection, migration workflow, seed fixtures that are obviously synthetic, and safe reset instructions for local development.
 - Add structured logging, request IDs, error reporting, health checks, and basic performance budgets.
-- Create deployment and rollback playbooks; test backup restoration before storing real Member data.
+- Create local-device deployment, restart, network recovery, and rollback playbooks; test PostgreSQL and R2 backup restoration before storing real Member data.
 
-**Deliverables:** running app shell, CI pipeline, development/staging environment, schema migration workflow, seed data, operations guide.
+**Deliverables:** running app shell, CI pipeline, local-device development/staging environment, schema migration workflow, seed data, operations guide, and R2 bucket configuration guide.
 
-**Exit criteria:** clean checkout can be installed and run from documented steps; CI is required for changes; staging can be deployed and rolled back; no production secrets or real user data appear in fixtures.
+**Exit criteria:** clean checkout can be installed and run from documented steps; CI is required for changes; the app can be deployed, restarted, and rolled back on the local device; external access uses HTTPS; no production secrets or real user data appear in fixtures.
 
 ### Phase 3 — Authentication, account types, and onboarding
+
+**Status:** In progress. Better Auth-based email/password registration and sign-in, email verification/recovery screens, the ZeptoMail delivery adapter, Member onboarding persistence, server-side Member/Admin guards, and an audited operator bootstrap/recovery path are implemented in `skillswap-app/`. TypeScript and Prisma client generation pass. The Better Auth choice is provisional pending owner sign-off before public launch; live email delivery and an end-to-end access-boundary walkthrough remain outstanding.
 
 **Goal:** Implement the Member/Admin account model and safe access boundaries.
 
 **Work**
 
 - Implement sign-up, sign-in, sign-out, email verification, and account recovery using the selected identity provider.
-- On first sign-in, create one app `User` row with `role=MEMBER`; do not offer a teacher-vs-learner account choice.
+- On sign-up, create one app `User` row and `MemberProfile`; do not offer a teacher-vs-learner account choice or accept a client-controlled role.
 - Create admin grants only through a controlled, audited operator process; keep at least one documented bootstrap-admin recovery path.
 - Implement a centralized server DAL with `requireMember`, `requireAdmin`, ownership checks, minimal DTOs, and consistent 401/403 behavior.
 - Protect every Admin page, Server Action, Route Handler, data query, and background operation; UI hiding is supplementary only.
@@ -216,7 +226,9 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 
 **Deliverables:** Member profile editor, teach/learn skill manager, privacy settings, profile access-request flow.
 
-**Exit criteria:** one Member can add both teaching and learning skills; every profile view respects the selected visibility and access grant; hidden profiles leave discovery while existing sessions/conversations continue as the PRD specifies.
+**Implementation status:** Complete for Phase 4 scope. The profile editor, teach/learn skill listings and categories, privacy preferences, three-month hide/restore, private-profile preview and access approval lifecycle, blocking, completeness nudges, and field-allowlisted self/public/private DTOs are implemented in `skillswap-app/`. Existing onboarding skill arrays are migrated and synced into listings. ZeptoMail access-request and decision notifications are wired through the existing email adapter. The dedicated local PostgreSQL database is configured and all migrations are applied. A database-backed privacy-state walkthrough passed for public details, private preview, pending and approved access, blocking, temporary hiding, and mandatory privacy review after restoration. Notification retries/deduplication remain part of Phase 13's notification/job layer.
+
+**Exit criteria:** one Member can manage both teaching and learning skills; profile DTOs enforce visibility, access grants, blocks, and hide periods; restored profiles return to a basic preview until their owner reviews privacy settings. Phase 5 discovery queries must apply the same visibility and hide rules. Later exchange/session and conversation flows must preserve existing activity when discovery is hidden.
 
 ### Phase 5 — Skill discovery, search, and matching
 
@@ -233,6 +245,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 - Add availability and inactivity filtering without exposing exact private active status.
 
 **Deliverables:** searchable directory, match list, direct-swap candidates, saved area, followed skills/people, dismissal and personalization controls.
+
+**Implementation status:** Complete for the current Phase 5 scope. `/discover` provides category and text search, teach/learn direction, level, verified-skill, shared-availability, coarse recent-activity filters, sorting, pagination, privacy-safe member cards, and concise match reasons. Members can save/follow or dismiss profiles and save/follow skills; recommendation settings support active, paused, off, minimum Trust Level, and reset. `/discover/swaps` shows two-way skill overlap and proposed session order, and `/saved` lists saved/followed people and skills. Discovery reads filter inactive, undiscoverable, hidden, unverified, admin, and mutually blocked accounts and use the Phase 4 profile visibility policy. TypeScript, ESLint, and PostgreSQL migration status pass. Trust remains at its schema default until a later trust progression phase; availability is currently a coarse profile-provided signal, not calendar overlap. Learning requests and swap acceptance are Phase 6 work.
 
 **Exit criteria:** matching is explainable and filterable; users can browse without accepting recommendations; private/hidden/blocked accounts are filtered consistently; search ranking does not treat Trust Level as a public popularity score.
 
@@ -251,6 +265,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 - Add rate limits and anti-spam controls for requests, messages, follows, and report submissions.
 
 **Deliverables:** learning request board, response/invitation flow, conversations, block/report controls, Admin report queue input.
+
+**Implementation status:** Complete for the Phase 6 application scope. Members can post, edit, and close learning requests; send public or private responses with a matching teach offer; accept, decline, or withdraw responses; and send, accept, decline, or withdraw credit-learning and direct-swap requests. Accepted requests establish a connection and private conversation. Messaging checks participant membership, active connection, account status, consent settings, and mutual block state on every read/write; messages are persisted with pagination and unread counters. Blocking closes pending pairwise requests, deactivates conversations, removes mutual people/skill follows, and ends the connection in one transaction. Rate limits cover requests, responses, follows, messages, and reports. Members can submit private reports with context and linked message evidence; Admins get an audited triage queue. Typecheck, lint, migration status, and production build pass. File attachments remain disabled until the private R2 upload and evidence-retention policy are configured; context and conversation/message references work now. Session booking, credit holds, and settlement remain later phases.
 
 **Exit criteria:** only authorized conversation participants can read/write; blocked users cannot initiate or continue prohibited interactions; reports preserve context for Admin review without exposing private case notes to other Members.
 
@@ -272,6 +288,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 
 **Exit criteria:** only accepted proposals create confirmed sessions; double booking is prevented or clearly resolved; session history records every state change; DST transitions display correctly; a participant cannot mark another user’s attendance by changing client input.
 
+**Implementation status:** Complete for the Phase 7 application scope. Members can create and accept initial time proposals and reschedules; UTC instants are paired with the proposer’s IANA time zone, and local-time conversion rejects daylight-saving gaps and overlaps. Confirmed sessions last 60 minutes plus a 5-minute buffer, and serializable acceptance checks with participant-row locks prevent overlapping confirmed sessions. Direct swaps can be scheduled as two separate, role-reversed session legs. Session pages show each participant’s current local time, encrypted participant-only Zoom/Google Meet links, configurable email reminders, completion marks from both participants, cancellation history, and private emergency/no-show reports. Admins can review incidents with audited decisions. Blocking a member closes pending or confirmed sessions and clears their unsent reminders. A local reminder worker sends through ZeptoMail when configured. Late changes are recorded for Phase 8 settlement review; credit holds, penalties, emergency compensation, and no-show strikes are not applied until the Phase 8 ledger and approved policy are implemented. No calendar-provider APIs or automatic time suggestions are included.
+
 ### Phase 8 — Credit wallet and credit-based learning
 
 **Goal:** Make credit movement correct, recoverable, and auditable.
@@ -290,6 +308,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 
 **Exit criteria:** retrying the same booking or webhook cannot double-charge; concurrent bookings cannot spend the same available credits; every balance can be reconstructed from the ledger; cancelled or disputed sessions resolve through specified ledger events rather than deletion or silent edits.
 
+**Implementation status:** Ledger tables and append-only balanced postings, idempotent hold/release/completion services, wallet history and balances, session price snapshots, and a read-only Admin reconciliation queue are implemented. Database triggers enforce zero-sum transactions with at least two postings and reject edits/deletions. The owner approved the applicable Phase 1 accounting/cancellation policy as `phase1-approved-v1`; settlement remains off by default. Added a local-only synthetic-credit fixture and manual scenario walkthrough; neither has been executed yet. Phase 8 still needs operational/legal review and scenario verification before launch.
+
 ### Phase 9 — Direct SkillSwap protocol
 
 **Goal:** Implement the signature two-leg exchange without relying on informal trust alone.
@@ -307,6 +327,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 
 **Exit criteria:** all transition paths have deterministic ledger outcomes; no deposit is released twice; a user restricted from direct swaps can still use credit-based learning and other permitted product features.
 
+**Implementation status:** Direct-swap agreements now snapshot both skill values and each member's ceiling-half deposit quote. Both session legs must have proposed times before either is confirmed; when credit posting is enabled, both deposits are locked atomically before confirmation. Both participants must mark both legs complete before both deposits are returned. Mutual cancellation requires the other participant's explicit confirmation. Declined times, cancellation requests, and emergency/no-show reports move the exchange into an Admin review queue with both leg histories, deposit/value details, and outcome previews. Admin resolution posts balanced ledger entries for late cancellation/no-show before teaching, failure after teaching with reserve-funded full-value compensation, and accepted emergencies with half-value compensation. Upheld direct-swap no-shows add a separate strike; the third strike suspends direct-swap access for 30 days without restricting credit learning or other Member features. The owner approved the policy as `phase1-approved-v1`; settlement remains off by default. Added a local-only synthetic-credit fixture and scenario walkthrough, but the credit outcomes have not yet been exercised end to end.
+
 ### Phase 10 — Reviews, trust, verification, disputes, and appeals
 
 **Goal:** Build accountable feedback and enforceable trust decisions without popularity mechanics.
@@ -317,11 +339,14 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 - Calculate and display public Trust Level, ratings, verified badges, completed exchanges, and progress to next level.
 - Implement Trust Level events with reason codes, notification on actual level changes, review-before-negative-impact where required, and appeal submission.
 - Build general and skill verification request queues; restrict evidence access and enforce retention/deletion policy.
+- Store approved verification evidence in private Cloudflare R2 objects; issue short-lived signed access only after server-side authorization and audit access to sensitive evidence.
 - Build dispute opening, relevant credit freeze, exchange pause between parties, evidence timeline, Admin decision, one appeal, and final ledger action.
 - Keep dispute evidence and history private; disclose only approved, appropriate explanations to affected Members.
 - Add strike thresholds, direct-swap suspension, teacher suspension, and booking restrictions as configurable policy records with audit trail.
 
 **Deliverables:** post-session feedback, Trust Level view, verification queues, dispute and appeal workflows, trust/suspension history.
+
+**Implementation status:** The app now supports one private/public review per completed session, public Trust Level and reputation details, audited level changes with ZeptoMail notifications, identity and skill verification review with private R2 evidence links and retention cleanup, and configurable trust/restriction policy. Credit-learning disputes can freeze active holds, pause the session, receive one appeal, and record a member-safe final outcome; Admin actions and evidence access are audited. Ratings do not automatically reduce Trust Level or trigger restrictions. The Phase 10 migration is applied and the schema is current. Live R2/ZeptoMail configuration and a dispute-specific evidence timeline/attachment exchange remain incomplete. Credit movement requires the approved Phase 1 policy version and explicit enablement; production evidence collection still requires legal/privacy review. See `skillswap-app/README.md` and `docs/operations/r2-storage.md` for operating boundaries.
 
 **Exit criteria:** reviews cannot be duplicated or submitted before completion; one poor review alone does not trigger punishment; admins can explain a decision without revealing private dispute history; every trust restriction and appeal outcome is audited.
 
@@ -342,6 +367,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 
 **Exit criteria:** Member credentials never access Admin endpoints; sensitive evidence is viewable only by authorized staff; every privileged mutation is attributable and reviewable; a departed admin can be revoked promptly.
 
+**Implementation status:** Admin navigation now links to member/offboarding controls, operational queues, catalog categories, session review, aggregate metrics, the append-only audit log, and the existing trust/verification workspace. Safety reports, incidents, disputes, verifications, and direct swaps support priority and Admin assignment with server-checked conflict exclusions and reasoned audit events. Account suspension/restriction revokes active auth sessions; Admin offboarding revokes the grant and preserves at least one active Admin. Sensitive exports are not provided; emails are masked in the member list, audit details are redacted, and meeting/private case content is excluded from operational views unless the Admin workflow requires it. The Phase 11 schema migration is applied and the live schema matches Prisma. MFA enforcement remains an operator/identity-provider setup requirement before public launch. See the Admin section in `docs/operations/local-device-runbook.md`.
+
 ### Phase 12 — Credit purchase, gifts, welcome/referral rewards
 
 **Goal:** Add permitted credit acquisition without compromising the ledger or cross-border experience.
@@ -357,6 +384,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 
 **Deliverables:** hosted checkout, gift flow, promotional/referral rules, reconciliation and refund playbook.
 
+**Implementation status:** Partially implemented. `/wallet/gift` supports Member lookup, optional messages, bounded gift amounts, a rolling daily cap, mutual block checks, idempotent balanced ledger postings, wallet history, and best-effort ZeptoMail notification. Public member profiles link to the gift form. The Phase 12 migration is applied, but all credit movement remains behind the existing credit-policy gate. No payment provider or commercial policy has been approved, so hosted checkout, signed provider webhooks, purchase/refund/chargeback reconciliation, welcome rewards, and referral promotions remain unimplemented. Do not select a provider, invent launch pricing, or enable credit posting in this phase. Phase 12 is not complete until those decisions and remaining flows are implemented.
+
 **Exit criteria:** payment confirmation alone (verified server-side) creates purchased credits; user-supplied client callbacks cannot mint credits; purchases and promotional balances remain distinguishable for support while using one displayed currency.
 
 ### Phase 13 — Notifications, home feed, and learning community
@@ -366,7 +395,7 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 **Work**
 
 - Implement in-app notification inbox and user preference controls by event and channel.
-- Add email delivery for critical events, retry/deduplication, unsubscribe rules where required, and timezone-aware reminders.
+- Add ZeptoMail email delivery for critical events, retry/deduplication, unsubscribe rules where required, and timezone-aware reminders.
 - Implement home feed from followed activity, skill opportunities, requests, sessions, and learning content with controls for type, skills, and followed activity volume.
 - Add small educational post types: tip, project/demo, learning progress, and tutorial; support save, like, comment, follow, and report.
 - Apply block, visibility, mute, and content moderation rules consistently in feeds, notifications, and search.
@@ -374,6 +403,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 **Deliverables:** notification center/preferences, reminder jobs, customizable home feed, learning-focused content composer and view.
 
 **Exit criteria:** duplicate jobs do not send duplicate critical notifications; users can turn off optional recommendations; hidden, blocked, or private content never appears through a feed cache or notification preview.
+
+**Implementation status:** Partially implemented. A database-backed notification inbox supports idempotent enqueue, read state, per-category in-app/email preferences, and a ZeptoMail outbox worker with row locking, retries, and bounded attempts. Message and session updates are queued; session reminders retain their local-time formatting and now honor the email session preference. `/community` supports public/follower-only tips, projects, progress updates, and tutorials; follow/skill filters, activity volume, save, appreciation, comments, reports, and member mutes are backed by PostgreSQL. The Admin community moderation queue can hide reported posts or dismiss reports with audit records. Feed queries and actions enforce account status, public profile visibility, blocks, mutes, and follower visibility. The Phase 13 migration is applied. The email outbox is at-least-once around an ambiguous provider timeout; a worker crash after provider acceptance but before database acknowledgement can result in a duplicate email. Configure `npm run notifications:send` on the local host to drain the outbox. More exhaustive notification coverage, moderation workflows, and deployment scheduling remain launch work.
 
 ### Phase 14 — Analytics, quality, beta, and launch readiness
 
@@ -384,6 +415,7 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 - Instrument activation, skills added, search-to-request, match acceptance, confirmed sessions, completions, repeat exchanges, direct-swap completion, credit purchases, and safety outcomes.
 - Establish dashboards for supply/demand by category, match rate, session completion, no-show/dispute rate, repeat learning, trust changes, and credit reconciliation.
 - Complete responsive, accessibility, privacy, security, abuse, performance, backup/restore, and operational-readiness reviews.
+- Validate the local host's uptime, power/network recovery, HTTPS configuration, remote administration controls, and restore procedure before inviting a global beta cohort.
 - Run end-to-end scenarios for Member signup through completed exchange, direct swap with each exception, Admin report/dispute resolution, and payment/refund retries.
 - Pilot with a small group, review support load and marketplace imbalance, and fix high-impact failure paths before broad launch.
 - Define incident response, support escalation, data export/deletion, moderation response, release rollback, and status communication.
@@ -391,6 +423,8 @@ Every phase includes a working demo or operational artifact. The exit checks inc
 **Deliverables:** launch checklist, beta scorecard, operator/on-call playbook, dashboards, signed-off privacy/security review.
 
 **Exit criteria:** core journeys meet agreed completion/reliability targets; ledger reconciliation is clean; backups restore; critical accessibility/security issues are closed; support can respond to a reported safety issue and a disputed credit outcome.
+
+**Implementation status:** Partially implemented. `/admin/metrics` now presents aggregate activation, skill supply/demand by category, request acceptance, session completion/no-show/dispute rates, repeat participation, direct-swap settlement, safety outcomes, trust changes, and per-transaction ledger balance checks. Metrics come from existing product records; search impressions are not collected, so search-to-request conversion is explicitly unavailable. The dashboard avoids member identifiers and private content, and purchase counts are not reported as revenue. Added a closed-beta scorecard, launch-readiness checklist, and incident-response playbook under `docs/operations/`. The local PostgreSQL instance is running, its per-user sign-in task is registered, all 19 migrations are applied, Prisma reports no schema differences, and a pre-migration backup is stored outside the repository. The production build and TypeScript pass using the local Webpack/WASM fallback. The app now has a PWA manifest, install icons, install guidance, and an offline fallback that excludes private data; actual device installation still depends on a production HTTPS URL and device/browser validation. Production host uptime/recovery, TLS and remote administration, restore evidence, accessibility/security sign-off, payment/refund end-to-end scenarios, beta targets, staffing/contacts, and actual pilot results still require an operator/product owner. No public launch readiness is claimed.
 
 ### Phase 15 — Post-MVP expansion
 
@@ -401,6 +435,8 @@ Start only after the MVP exchange loop has repeat use and safe operations.
 - Premium memberships, promoted discovery, and partnerships after trust and marketplace effects are evaluated.
 - More advanced recommendation models after there is enough high-quality, consented behavioral data.
 - Additional community formats and creator/organization features.
+
+**Implementation status:** Partially implemented as a gated foundation. Members can create private learning plans with a skill, measurable goal, target date, up to 30 milestones, optional milestone targets, completion reflections, progress, and active/paused/completed states. Plan access is owner-scoped in every page and Server Action, and write actions are rate-limited. The Phase 15 migration is applied and the feature is available against the local database. The repeat-use and safe-operations entry gate is not evidenced: Phase 14 pilot, restore, accessibility/security sign-off, beta targets, and support staffing are still open. Defer Live Skill Rooms/group learning, paid memberships, promoted discovery, behavioral recommendations, and creator tools until their product, privacy, operating, and marketplace effects can be evaluated. No broad beta or production readiness is claimed.
 
 ## Cross-cutting quality gates
 
