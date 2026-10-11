@@ -2,6 +2,7 @@ import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
 const datasourceUrl =
+  process.env.NETLIFY_DB_URL ??
   process.env.DATABASE_URL ??
   "postgresql://skillswap:skillswap@localhost:5432/skillswap?schema=public";
 

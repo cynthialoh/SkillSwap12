@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "node scripts/next.mjs dev --webpack --hostname 127.0.0.1",
-    "prebuild": "prisma generate",
+    "prebuild": "prisma migrate deploy && prisma generate",
     "build": "node scripts/next.mjs build --webpack",
     "start": "node scripts/next.mjs start",
     "lint": "eslint .",
@@ -25,6 +25,7 @@
     "verification:retention": "tsx scripts/verification-retention.ts"
   },
   "dependencies": {
+    "@netlify/database": "^2.0.1",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "better-auth": "^1.7.7",
