@@ -36,7 +36,7 @@ export function AuthForm({ mode, resetToken }: AuthFormProps) {
         if (result.error)
           throw new Error(result.error.message || "We could not create your account.");
         setMessage(
-          "Check your inbox for a verification link. Your Member profile is ready when you verify your email.",
+          "Check your inbox and spam folder for the verification link. If it does not arrive, try signing in with this email to request another link.",
         );
       } else if (mode === "sign-in") {
         const result = await authClient.signIn.email({
@@ -65,7 +65,13 @@ export function AuthForm({ mode, resetToken }: AuthFormProps) {
         setMessage("Your password has been updated. You can now sign in.");
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Something went wrong. Please try again.");
+      const reason =
+        cause instanceof Error ? cause.message : "Something went wrong. Please try again.";
+      setError(
+        reason.includes("Verification email could not be delivered")
+          ? "Your account may have been created, but the verification email could not be sent. Once email delivery is fixed, sign in with this email and password to request another link."
+          : reason,
+      );
     } finally {
       setPending(false);
     }
