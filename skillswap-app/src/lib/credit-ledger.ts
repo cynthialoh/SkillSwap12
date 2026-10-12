@@ -7,6 +7,7 @@ import type {
 } from "@/generated/prisma/client";
 
 export const APPROVED_CREDIT_POLICY_VERSION = "phase1-approved-v1";
+export const PROFILE_COMPLETION_REWARD = 4;
 
 export function creditPostingEnabled() {
   return (
@@ -111,6 +112,51 @@ export async function getMemberCreditTotals(tx: Prisma.TransactionClient, userId
     }),
   ]);
   return { spendable: spendable._sum.amount ?? 0, held: held._sum.amount ?? 0 };
+}
+
+/** Ensure each completed Member profile receives its one-time welcome reward. */
+export async function ensureProfileCompletionReward(tx: Prisma.TransactionClient, userId: string) {
+  const profile = await tx.memberProfile.findUnique({
+    where: { userId },
+    select: { onboardingCompletedAt: true },
+  });
+  if (!profile?.onboardingCompletedAt) return false;
+
+  const idempotencyKey = `profile-completion-reward:${userId}`;
+  const existing = await tx.creditLedgerTransaction.findUnique({
+    where: { idempotencyKey },
+    select: { id: true },
+  });
+  if (existing) return false;
+
+  await lockCreditWallet(tx, userId);
+  const prior = await tx.creditLedgerTransaction.findUnique({
+    where: { idempotencyKey },
+    select: { id: true },
+  });
+  if (prior) return false;
+
+  const memberAccount = await ensureCreditAccount(tx, "MEMBER_SPENDABLE", userId);
+  const promotionReserve = await ensureCreditAccount(tx, "PROMOTION_RESERVE");
+  await postBalancedCreditTransaction(tx, {
+    idempotencyKey,
+    type: "PROMOTION",
+    reason: "One-time reward for completing a Member profile.",
+    metadata: { reward: "PROFILE_COMPLETION", amount: PROFILE_COMPLETION_REWARD },
+    postings: [
+      {
+        accountId: promotionReserve.id,
+        amount: -PROFILE_COMPLETION_REWARD,
+        source: "PROMOTIONAL",
+      },
+      {
+        accountId: memberAccount.id,
+        amount: PROFILE_COMPLETION_REWARD,
+        source: "PROMOTIONAL",
+      },
+    ],
+  });
+  return true;
 }
 
 function assertPolicyEnabled() {

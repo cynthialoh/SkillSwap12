@@ -5,11 +5,33 @@ import { CreditCodeForm } from "../credit-code-form";
 
 export default async function AdminCreditCodesPage() {
   await requireAdminPage();
-  const creditCodes = await getPrismaClient().creditCode.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    include: { createdBy: { select: { memberProfile: { select: { displayName: true } } } } },
-  });
+  const prisma = getPrismaClient();
+  const [creditCodes, recipients] = await Promise.all([
+    prisma.creditCode.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        createdBy: { select: { memberProfile: { select: { displayName: true } } } },
+        recipient: {
+          select: {
+            id: true,
+            memberProfile: { select: { displayName: true } },
+            authUser: { select: { email: true } },
+          },
+        },
+      },
+    }),
+    prisma.user.findMany({
+      where: { status: "ACTIVE", adminGrant: null, memberProfile: { isNot: null } },
+      select: {
+        id: true,
+        memberProfile: { select: { displayName: true } },
+        authUser: { select: { email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 500,
+    }),
+  ]);
   const now = new Date();
   return (
     <main className="interaction-page admin-operations-page">
@@ -26,11 +48,16 @@ export default async function AdminCreditCodesPage() {
           remain in the ledger.
         </p>
         <p className="privacy-notice">
-          Code redemption follows the controlled-beta credit posting flag. Codes created while it is
-          paused will become redeemable once credit posting is enabled, unless they expire or are
-          deactivated first.
+          Voucher awards and redemption work independently of session settlement. Credit purchases
+          and session holds remain paused until the launch policy is enabled.
         </p>
-        <CreditCodeForm />
+        <CreditCodeForm
+          members={recipients.map((recipient) => ({
+            id: recipient.id,
+            displayName: recipient.memberProfile?.displayName || "Member",
+            email: recipient.authUser?.email || "No email",
+          }))}
+        />
       </section>
       <section className="interaction-panel">
         <h2>Issued codes</h2>
@@ -51,10 +78,14 @@ export default async function AdminCreditCodesPage() {
                       {code.codePrefix} · {status}
                     </strong>
                     <span>
-                      {code.amount} credits each · {code.redemptionCount}/{code.maxRedemptions} redemptions
+                      {code.amount} credits each · {code.redemptionCount}/{code.maxRedemptions}{" "}
+                      redemptions
                     </span>
+                    <span>Created by {code.createdBy.memberProfile?.displayName || "Admin"}</span>
                     <span>
-                      Created by {code.createdBy.memberProfile?.displayName || "Admin"}
+                      {code.recipient
+                        ? `Voucher for ${code.recipient.memberProfile?.displayName || code.recipient.authUser?.email || "Member"}`
+                        : "Shared code"}
                     </span>
                     <span>Reason: {code.reason}</span>
                     <time dateTime={code.createdAt.toISOString()}>

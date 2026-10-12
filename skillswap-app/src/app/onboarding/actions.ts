@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AccessDeniedError, requireMember } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
+import { ensureProfileCompletionReward } from "@/lib/credit-ledger";
 
 export type OnboardingState = { error?: string } | undefined;
 
@@ -55,47 +56,54 @@ export async function saveOnboarding(
 
   try {
     const prisma = getPrismaClient();
-    await prisma.memberProfile.update({
-      where: { userId: member.id },
-      data: {
-        displayName,
-        bio: bio || null,
-        location: location || null,
-        timezone,
-        teachSkills,
-        learnSkills,
-        availability: availability ? { notes: availability.slice(0, 1000) } : undefined,
-        isDiscoverable,
-        onboardingCompletedAt: new Date(),
-      },
-    });
-    const otherCategory = await prisma.skillCategory.findUnique({
-      where: { slug: "other" },
-      select: { id: true },
-    });
-    if (otherCategory) {
-      const uniqueNames = (items: string[]) => [
-        ...new Map(
-          items.map((item) => [item.toLocaleLowerCase(), item.replace(/\s+/g, " ").slice(0, 100)]),
-        ).values(),
-      ];
-      for (const [direction, names] of [
-        ["TEACH", uniqueNames(teachSkills)],
-        ["LEARN", uniqueNames(learnSkills)],
-      ] as const) {
-        for (const name of names) {
-          await prisma.skillListing.upsert({
-            where: { userId_direction_name: { userId: member.id, direction, name } },
-            create: { userId: member.id, categoryId: otherCategory.id, direction, name },
-            update: {},
-          });
+    await prisma.$transaction(async (tx) => {
+      await tx.memberProfile.update({
+        where: { userId: member.id },
+        data: {
+          displayName,
+          bio: bio || null,
+          location: location || null,
+          timezone,
+          teachSkills,
+          learnSkills,
+          availability: availability ? { notes: availability.slice(0, 1000) } : undefined,
+          isDiscoverable,
+          onboardingCompletedAt: new Date(),
+        },
+      });
+      await ensureProfileCompletionReward(tx, member.id);
+      const otherCategory = await tx.skillCategory.findUnique({
+        where: { slug: "other" },
+        select: { id: true },
+      });
+      if (otherCategory) {
+        const uniqueNames = (items: string[]) => [
+          ...new Map(
+            items.map((item) => [
+              item.toLocaleLowerCase(),
+              item.replace(/\s+/g, " ").slice(0, 100),
+            ]),
+          ).values(),
+        ];
+        for (const [direction, names] of [
+          ["TEACH", uniqueNames(teachSkills)],
+          ["LEARN", uniqueNames(learnSkills)],
+        ] as const) {
+          for (const name of names) {
+            await tx.skillListing.upsert({
+              where: { userId_direction_name: { userId: member.id, direction, name } },
+              create: { userId: member.id, categoryId: otherCategory.id, direction, name },
+              update: {},
+            });
+          }
         }
       }
-    }
+    });
   } catch {
     return { error: "We could not save your profile right now. Please try again." };
   }
 
   revalidatePath("/member");
-  redirect("/member");
+  revalidatePath("/wallet");
+  redirect("/member?welcome=credits");
 }

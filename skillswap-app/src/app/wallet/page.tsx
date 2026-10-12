@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { requireMemberPage } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { creditPostingEnabled, getMemberCreditTotals } from "@/lib/credit-ledger";
+import {
+  creditPostingEnabled,
+  ensureProfileCompletionReward,
+  getMemberCreditTotals,
+} from "@/lib/credit-ledger";
 import type { CreditTransactionType } from "@/generated/prisma/client";
 import { redeemCreditCode } from "./redeem-credit-code";
 
@@ -31,7 +35,8 @@ export default async function WalletPage({
     ? (type as CreditTransactionType)
     : undefined;
   const prisma = getPrismaClient();
-  const [totals, transactions, gifts] = await Promise.all([
+  await prisma.$transaction((tx) => ensureProfileCompletionReward(tx, member.id));
+  const [totals, transactions, gifts, assignedVouchers] = await Promise.all([
     prisma.$transaction((tx) => getMemberCreditTotals(tx, member.id)),
     prisma.creditLedgerTransaction.findMany({
       where: {
@@ -57,7 +62,28 @@ export default async function WalletPage({
         recipient: { select: { id: true, memberProfile: { select: { displayName: true } } } },
       },
     }),
+    prisma.creditCode.findMany({
+      where: {
+        recipientId: member.id,
+        isActive: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        redemptions: { none: { userId: member.id } },
+      },
+      select: {
+        id: true,
+        amount: true,
+        redemptionCount: true,
+        maxRedemptions: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
   ]);
+  const vouchers = assignedVouchers.filter(
+    (voucher) => voucher.redemptionCount < voucher.maxRedemptions,
+  );
   const formatSource = (source: string) => source.toLowerCase().replaceAll("_", " ");
   return (
     <main className="interaction-page">
@@ -92,15 +118,42 @@ export default async function WalletPage({
           No processor is selected. No purchase or redirect can add credits to your balance.
         </span>
       </section>
+      <section className="interaction-panel wallet-vouchers-panel">
+        <div className="interaction-panel-heading">
+          <div>
+            <h2>Your redeemable vouchers</h2>
+            <p>Vouchers assigned to your account are shown here. Redeem one to add its credits.</p>
+          </div>
+        </div>
+        {vouchers.length ? (
+          <div className="wallet-voucher-list">
+            {vouchers.map((voucher) => (
+              <article className="wallet-voucher-card" key={voucher.id}>
+                <div>
+                  <span className="capability-tag">SKILLSWAP VOUCHER</span>
+                  <strong>{voucher.amount} Skill Credits</strong>
+                  <small>
+                    {voucher.expiresAt
+                      ? `Redeem by ${voucher.expiresAt.toLocaleDateString()}`
+                      : "No expiry date"}
+                  </small>
+                </div>
+                <form action={redeemCreditCode}>
+                  <input type="hidden" name="voucherId" value={voucher.id} />
+                  <button className="primary-button">Redeem voucher</button>
+                </form>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="empty-state">
+            No redeemable vouchers yet. An Admin can assign a voucher to your account.
+          </p>
+        )}
+      </section>
       <section className="interaction-panel">
         <h2>Redeem a Skill Credit code</h2>
         <p>Enter a code from SkillSwap to add its credits to your wallet.</p>
-        {!creditPostingEnabled() && (
-          <p className="privacy-notice" role="status">
-            Code redemption is paused until credit posting is enabled for the controlled beta.
-            Existing codes remain valid unless they expire or an Admin deactivates them.
-          </p>
-        )}
         {params.promo === "redeemed" && (
           <p className="privacy-notice" role="status">
             Code redeemed. Your new credits are included in the balance and credit history below.
@@ -114,18 +167,9 @@ export default async function WalletPage({
         <form action={redeemCreditCode} className="interaction-form wallet-redeem-code-form">
           <label>
             Special code
-            <input
-              name="code"
-              autoComplete="off"
-              maxLength={30}
-              placeholder="SKILL-…"
-              disabled={!creditPostingEnabled()}
-              required
-            />
+            <input name="code" autoComplete="off" maxLength={30} placeholder="SKILL-…" required />
           </label>
-          <button className="primary-button" disabled={!creditPostingEnabled()}>
-            Redeem code
-          </button>
+          <button className="primary-button">Redeem code</button>
         </form>
       </section>
       <section className="wallet-balance-grid">

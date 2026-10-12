@@ -24,6 +24,7 @@ export async function createAdminCreditCode(
   const amount = Number(data.get("amount"));
   const maxRedemptions = Number(data.get("maxRedemptions"));
   const reason = field(data, "reason").slice(0, 500);
+  const recipientId = field(data, "recipientId") || null;
   const expiresAtText = field(data, "expiresAt");
   const expiresAt = expiresAtText ? new Date(expiresAtText) : null;
   if (
@@ -33,12 +34,14 @@ export async function createAdminCreditCode(
     !Number.isSafeInteger(maxRedemptions) ||
     maxRedemptions < 1 ||
     maxRedemptions > 100_000 ||
+    (recipientId && maxRedemptions !== 1) ||
     reason.length < 20 ||
     (expiresAt && (!Number.isFinite(expiresAt.getTime()) || expiresAt <= new Date()))
   ) {
     return {
       status: "error",
-      message: "Enter a valid amount, redemption limit, future expiry (or leave it blank), and a reason of at least 20 characters.",
+      message:
+        "Enter a valid amount, redemption limit, future expiry (or leave it blank), and a reason of at least 20 characters.",
     };
   }
 
@@ -46,6 +49,15 @@ export async function createAdminCreditCode(
   const codeHash = hashCode(code);
   const codePrefix = `${code.slice(0, 10)}…`;
   const prisma = getPrismaClient();
+  if (recipientId) {
+    const recipient = await prisma.user.findFirst({
+      where: { id: recipientId, status: "ACTIVE", adminGrant: null },
+      select: { id: true },
+    });
+    if (!recipient) {
+      return { status: "error", message: "Choose an active Member account for this voucher." };
+    }
+  }
   await prisma.$transaction(async (tx) => {
     await tx.creditCode.create({
       data: {
@@ -55,6 +67,7 @@ export async function createAdminCreditCode(
         maxRedemptions,
         reason,
         expiresAt,
+        recipientId,
         createdById: actor.id,
       },
     });

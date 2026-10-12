@@ -129,7 +129,9 @@ body {
   border-radius: 7px;
   background: transparent;
   color: var(--teal-dark);
-  font: 700 12px "DM Sans", sans-serif;
+  font:
+    700 12px "DM Sans",
+    sans-serif;
   cursor: pointer;
 }
 .password-visibility-toggle:focus-visible {
@@ -2433,6 +2435,298 @@ h1 span {
 @media (max-width: 700px) {
   .policy-grid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Member home: compact, mobile-first overview matching the supplied reference. */
+.member-dashboard {
+  min-height: 100vh;
+  padding: 0 20px 108px;
+  background: #f3f6f7;
+}
+.member-dashboard-content {
+  width: min(100%, 620px);
+  margin: 0 auto;
+}
+.member-dashboard-header {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+}
+.member-dashboard-header .member-date {
+  color: #87949c;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+.member-dashboard-header .sign-out-button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+.member-welcome {
+  padding: 9px 0 24px;
+}
+.member-welcome h1 {
+  margin: 0 0 8px;
+  color: #19232b;
+  font:
+    800 clamp(26px, 6vw, 36px) / 1.16 Manrope,
+    sans-serif;
+  letter-spacing: -0.045em;
+}
+.member-welcome h1 span {
+  color: var(--amber);
+}
+.member-welcome > p {
+  margin: 0 0 28px;
+  color: #77858e;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.member-find-skill {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 12px;
+  background: #10877b;
+  box-shadow: 0 8px 18px rgb(16 135 123 / 15%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background 140ms ease,
+    transform 140ms ease;
+}
+.member-find-skill:hover {
+  transform: translateY(-1px);
+  background: #0a7067;
+}
+.member-find-skill span {
+  font-size: 19px;
+}
+.member-credit-welcome {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #c4ece2;
+  border-radius: 11px;
+  background: #e6f8f3;
+  color: #166c5f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.member-dashboard-cards {
+  display: grid;
+  gap: 14px;
+}
+.member-stat-card {
+  min-width: 0;
+  padding: 19px 20px 17px;
+  border: 1px solid #e2e9eb;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgb(26 48 57 / 3%);
+}
+.member-stat-heading,
+.member-stat-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.member-stat-heading > span:first-child {
+  color: #75838c;
+  font-size: 14px;
+}
+.member-stat-icon {
+  display: grid;
+  width: 39px;
+  height: 39px;
+  flex: 0 0 39px;
+  place-items: center;
+  border-radius: 13px;
+  font-size: 19px;
+}
+.credit-icon {
+  background: #fff2d6;
+  color: #b66c05;
+}
+.exchange-icon {
+  background: #e4f7f4;
+  color: var(--teal-dark);
+}
+.member-stat-value {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin: 12px 0 13px;
+}
+.member-stat-value strong {
+  color: #19232b;
+  font:
+    800 38px / 1 Manrope,
+    sans-serif;
+  letter-spacing: -0.05em;
+}
+.member-stat-value span {
+  color: #75838c;
+  font-size: 14px;
+}
+.member-stat-footer {
+  min-height: 23px;
+  font-size: 13px;
+}
+.member-stat-footer > span {
+  color: var(--teal-dark);
+  font-weight: 600;
+}
+.member-stat-footer a {
+  color: #087c80;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.member-stat-footer a:hover {
+  text-decoration: underline;
+}
+.member-next-step-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid #e2e9eb;
+  border-radius: 18px;
+  background: #fff;
+}
+.member-next-step-card > div {
+  min-width: 0;
+}
+.member-next-step-card h2 {
+  margin: 7px 0;
+  font:
+    700 18px / 1.3 Manrope,
+    sans-serif;
+}
+.member-next-step-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.member-next-step-card .secondary-button {
+  flex: 0 0 auto;
+  text-decoration: none;
+}
+.member-bottom-nav {
+  position: fixed;
+  z-index: 20;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  width: min(100%, 650px);
+  min-height: 83px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: stretch;
+  margin: 0 auto;
+  padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+  border: 1px solid #e2e9eb;
+  border-bottom: 0;
+  border-radius: 17px 17px 0 0;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 -7px 24px rgb(24 44 52 / 7%);
+  backdrop-filter: blur(12px);
+}
+.member-bottom-nav a {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 12px;
+  color: #52616b;
+  font-size: 11px;
+  text-decoration: none;
+}
+.member-bottom-nav a.active {
+  background: #e3f7f3;
+  color: #08786f;
+  font-weight: 700;
+}
+.member-bottom-nav-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.wallet-vouchers-panel {
+  border-color: #d9ece8;
+}
+.wallet-voucher-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.wallet-voucher-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 17px;
+  border: 1px solid #dcece8;
+  border-radius: 13px;
+  background: linear-gradient(110deg, #f1fbf8, #fff 70%);
+}
+.wallet-voucher-card > div {
+  display: grid;
+  gap: 6px;
+}
+.wallet-voucher-card strong {
+  font:
+    700 18px Manrope,
+    sans-serif;
+}
+.wallet-voucher-card small {
+  color: var(--muted);
+}
+
+@media (max-width: 540px) {
+  .member-dashboard {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+  .member-welcome > p {
+    font-size: 14px;
+  }
+  .member-stat-card {
+    padding: 17px 16px 15px;
+  }
+  .member-stat-footer {
+    font-size: 12px;
+  }
+  .member-next-step-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .member-bottom-nav {
+    min-height: 76px;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+  .member-bottom-nav a {
+    gap: 3px;
+    font-size: 10px;
+  }
+  .member-bottom-nav-icon {
+    font-size: 18px;
+  }
+  .wallet-voucher-card {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

@@ -5,11 +5,29 @@ import { createAdminCreditCode, type CreditCodeFormState } from "./credit-code-a
 
 const initialState: CreditCodeFormState = { status: "idle", message: "" };
 
-export function CreditCodeForm() {
+export function CreditCodeForm({
+  members,
+}: {
+  members: Array<{ id: string; displayName: string; email: string }>;
+}) {
   const [state, action, pending] = useActionState(createAdminCreditCode, initialState);
   return (
     <form action={action} className="interaction-form admin-credit-code-form">
       <div className="admin-credit-code-fields">
+        <label>
+          Assign voucher to (optional)
+          <select name="recipientId" defaultValue="">
+            <option value="">Shared code — Member enters it manually</option>
+            {members.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.displayName} · {member.email}
+              </option>
+            ))}
+          </select>
+          <span>
+            Assigned vouchers appear in that Member’s wallet. Set maximum redemptions to 1.
+          </span>
+        </label>
         <label>
           Credits per redemption
           <input name="amount" type="number" min={1} max={100000} defaultValue={5} required />
