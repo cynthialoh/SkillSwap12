@@ -79,9 +79,16 @@ export async function postBalancedCreditTransaction(
   if (new Set(accountIds).size !== accountIds.length) {
     throw new CreditLedgerError("Each account can appear only once in a credit transaction.");
   }
+  // The Phase 8 database guard compares this timestamp to transaction_timestamp()
+  // before allowing child entries. Use PostgreSQL's exact transaction time rather
+  // than the Prisma client's clock/default for cross-host consistency.
+  const [{ transactionTime }] = await tx.$queryRaw<Array<{ transactionTime: Date }>>`
+    SELECT transaction_timestamp()::TIMESTAMP(3) AS "transactionTime"
+  `;
   return tx.creditLedgerTransaction.create({
     data: {
       idempotencyKey: input.idempotencyKey,
+      createdAt: transactionTime,
       type: input.type,
       actorId: input.actorId ?? null,
       sessionId: input.sessionId ?? null,
