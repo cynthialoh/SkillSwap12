@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { sendTransactionalEmail } from "@/lib/email/zeptomail";
+import { sendAuthEmail } from "@/lib/email/gmail";
 
 const secret = process.env.BETTER_AUTH_SECRET;
 if (!secret && process.env.NODE_ENV === "production") {
@@ -14,7 +14,7 @@ const prisma = getPrismaClient();
 
 function sendAuthLink(to: string, subject: string, url: string, label: string) {
   const text = `${label}: ${url}\n\nIf you did not request this, you can ignore this email.`;
-  return sendTransactionalEmail({
+  return sendAuthEmail({
     to,
     subject,
     text,
