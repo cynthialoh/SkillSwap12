@@ -35,13 +35,14 @@ export const auth = betterAuth({
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      void sendAuthLink(
+      await sendAuthLink(
         user.email,
         "Reset your SkillSwap password",
         url,
         "Reset your password",
       ).catch(() => {
         console.error("SkillSwap password reset email could not be delivered.");
+        throw new Error("Password reset email could not be delivered.");
       });
     },
   },
@@ -51,13 +52,14 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
     expiresIn: 60 * 60 * 24,
     sendVerificationEmail: async ({ user, url }) => {
-      void sendAuthLink(
+      await sendAuthLink(
         user.email,
         "Verify your SkillSwap email",
         url,
         "Verify your email address",
       ).catch(() => {
         console.error("SkillSwap verification email could not be delivered.");
+        throw new Error("Verification email could not be delivered.");
       });
     },
   },
