@@ -7,18 +7,44 @@ type InstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 };
 
+const INSTALLED_STORAGE_KEY = "skillswap:pwa-installed";
+
+function isStandaloneMode() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    ("standalone" in window.navigator &&
+      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone))
+  );
+}
+
+function setInstalledFlag(installed: boolean) {
+  try {
+    if (installed) window.localStorage.setItem(INSTALLED_STORAGE_KEY, "true");
+    else window.localStorage.removeItem(INSTALLED_STORAGE_KEY);
+  } catch {
+    // The display-mode check below still hides the prompt when storage is unavailable.
+  }
+}
+
+function hasInstalledFlag() {
+  try {
+    return window.localStorage.getItem(INSTALLED_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 export function PwaClient() {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [isIos, setIsIos] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(true);
+  const [isInstalled, setIsInstalled] = useState(true);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      ("standalone" in window.navigator &&
-        Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
-    setIsStandalone(standalone);
+    const standalone = isStandaloneMode();
+    const installed = standalone || hasInstalledFlag();
+    setIsInstalled(installed);
+    if (standalone) setInstalledFlag(true);
     setIsIos(
       /iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
         (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1),
@@ -32,10 +58,16 @@ export function PwaClient() {
 
     const handleInstallPrompt = (event: Event) => {
       event.preventDefault();
+      // Browsers only offer this event while installation is available. If we
+      // remembered an earlier installation, this means the app was removed.
+      setInstalledFlag(false);
+      setIsInstalled(false);
+      setDismissed(false);
       setInstallPrompt(event as InstallPromptEvent);
     };
     const handleInstalled = () => {
-      setIsStandalone(true);
+      setInstalledFlag(true);
+      setIsInstalled(true);
       setInstallPrompt(null);
     };
 
@@ -51,11 +83,14 @@ export function PwaClient() {
     if (!installPrompt) return;
     await installPrompt.prompt();
     const choice = await installPrompt.userChoice;
-    if (choice.outcome === "accepted") setIsStandalone(true);
+    if (choice.outcome === "accepted") {
+      setInstalledFlag(true);
+      setIsInstalled(true);
+    }
     setInstallPrompt(null);
   }
 
-  if (isStandalone || dismissed || (!installPrompt && !isIos)) return null;
+  if (isInstalled || dismissed || (!installPrompt && !isIos)) return null;
 
   return (
     <aside className="pwa-install-card" aria-label="Install SkillSwap">
