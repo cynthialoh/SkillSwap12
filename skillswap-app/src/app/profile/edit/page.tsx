@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackButton } from "@/components/back-button";
 import { requireMemberPage } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { getSelfProfileForMember } from "@/lib/profile-dto";
@@ -58,6 +59,7 @@ export default async function EditProfilePage() {
     <main className="profile-settings">
       <div className="profile-page-heading">
         <div>
+          <BackButton fallbackHref="/member" />
           <p className="section-kicker">YOUR MEMBER PROFILE</p>
           <h1>Profile &amp; privacy</h1>
           <p>Manage what other members see and the skills you share.</p>

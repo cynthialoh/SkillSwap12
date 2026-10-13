@@ -952,6 +952,35 @@ h1 span {
   margin: 5px 0;
   color: var(--muted);
 }
+.app-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  margin: 0 0 8px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--teal-dark, var(--primary, #08786f));
+  background: var(--surface, #fff);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.app-back-button svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+.app-back-button:focus-visible {
+  outline: 2px solid var(--primary, #13897e);
+  outline-offset: 2px;
+}
 .settings-panel {
   margin: 16px 0;
   padding: clamp(18px, 4vw, 30px);
