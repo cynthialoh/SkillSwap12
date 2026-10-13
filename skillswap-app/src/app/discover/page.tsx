@@ -33,6 +33,7 @@ export default async function DiscoverPage({
         </div>
         <nav className="discovery-nav">
           <Link href="/member">Workspace</Link>
+          <Link href="/members">Member directory</Link>
           <Link href="/discover/swaps">Direct swaps</Link>
           <Link href="/saved">Saved &amp; followed</Link>
           <Link href="/profile/edit">Profile</Link>

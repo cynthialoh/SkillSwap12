@@ -2548,6 +2548,24 @@ h1 span {
 .member-find-skill span {
   font-size: 19px;
 }
+.member-browse-members {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.member-directory-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0;
+}
+.member-directory-card h2 {
+  margin: 6px 0 0;
+  font: 700 19px Manrope, sans-serif;
+}
 .member-credit-welcome {
   margin: 0 0 14px;
   padding: 12px 14px;

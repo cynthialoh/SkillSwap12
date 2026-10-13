@@ -99,6 +99,9 @@ export default async function MemberPage({
           <Link className="member-find-skill" href="/discover">
             <span aria-hidden="true">＋</span> Find a skill to learn
           </Link>
+          <Link className="member-browse-members secondary-button" href="/members">
+            Browse members <span aria-hidden="true">→</span>
+          </Link>
         </section>
 
         {params.welcome === "credits" && (
