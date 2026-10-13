@@ -6,6 +6,7 @@ import { getPrismaClient } from "@/lib/db/prisma";
 import { ensureProfileCompletionReward, getMemberCreditTotals } from "@/lib/credit-ledger";
 import { ReferralInviteCard } from "@/components/referral-invite-card";
 import { ensureMemberReferralCode } from "@/lib/referrals";
+import { TimeOfDayGreeting } from "@/components/time-of-day-greeting";
 
 const dashboardLinks = [
   { href: "/member", icon: "⌂", label: "Overview" },
@@ -91,10 +92,11 @@ export default async function MemberPage({
         </header>
 
         <section className="member-welcome">
-          <h1>
-            {greeting}, {name}
-            <span aria-hidden="true"> ✦</span>
-          </h1>
+          <TimeOfDayGreeting
+            name={name}
+            initialGreeting={greeting}
+            timeZone={profile?.timezone ?? undefined}
+          />
           <p>A little knowledge goes a long way. What will you learn today?</p>
           <Link className="member-find-skill" href="/discover">
             <span aria-hidden="true">＋</span> Find a skill to learn
