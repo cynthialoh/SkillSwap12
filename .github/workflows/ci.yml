@@ -52,6 +52,8 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm run build
+      - name: Build application
+        # Better Auth validates this at build time; use a throwaway value for CI only.
+        run: BETTER_AUTH_SECRET="$(openssl rand -hex 32)" npm run build
         env:
           DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/skillswap?schema=public
