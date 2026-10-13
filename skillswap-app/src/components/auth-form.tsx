@@ -27,11 +27,15 @@ export function AuthForm({ mode, resetToken }: AuthFormProps) {
     try {
       if (mode === "sign-up") {
         const name = String(form.get("name") ?? "").trim();
+        const suppliedCode = new URLSearchParams(window.location.search).get("ref") ?? "";
+        const referralCode = /^[a-f0-9]{12}$/i.test(suppliedCode) ? suppliedCode.toUpperCase() : "";
         const result = await authClient.signUp.email({
           name,
           email,
           password,
-          callbackURL: "/onboarding",
+          callbackURL: referralCode
+            ? `/onboarding?ref=${encodeURIComponent(referralCode)}`
+            : "/onboarding",
         });
         if (result.error)
           throw new Error(result.error.message || "We could not create your account.");

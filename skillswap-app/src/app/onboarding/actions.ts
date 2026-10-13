@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AccessDeniedError, requireMember } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { ensureProfileCompletionReward } from "@/lib/credit-ledger";
+import { ensureProfileCompletionReward, rewardReferralInviter } from "@/lib/credit-ledger";
 
 export type OnboardingState = { error?: string } | undefined;
 
@@ -41,7 +41,10 @@ export async function saveOnboarding(
   const teachSkills = listField(formData, "teachSkills");
   const learnSkills = listField(formData, "learnSkills");
   const availability = field(formData, "availability");
+  const rawReferralCode = field(formData, "referralCode").toUpperCase();
+  const referralCode = /^[A-F0-9]{12}$/.test(rawReferralCode) ? rawReferralCode : "";
   const isDiscoverable = formData.get("isDiscoverable") === "on";
+  let inviterRewarded = false;
 
   if (displayName.length < 2 || displayName.length > 80)
     return { error: "Enter a name between 2 and 80 characters." };
@@ -71,6 +74,9 @@ export async function saveOnboarding(
           onboardingCompletedAt: new Date(),
         },
       });
+      inviterRewarded = referralCode
+        ? await rewardReferralInviter(tx, member.id, referralCode)
+        : false;
       await ensureProfileCompletionReward(tx, member.id);
       const otherCategory = await tx.skillCategory.findUnique({
         where: { slug: "other" },
@@ -105,5 +111,5 @@ export async function saveOnboarding(
 
   revalidatePath("/member");
   revalidatePath("/wallet");
-  redirect("/member?welcome=credits");
+  redirect(`/member?welcome=${inviterRewarded ? "referral" : "credits"}`);
 }

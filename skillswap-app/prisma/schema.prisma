@@ -372,6 +372,8 @@ model User {
   mutedByMembers                   MutedMember[]             @relation("MutedMemberTarget")
   queueAssignments                 AdminQueueAssignment[]    @relation("QueueAssignedAdmin")
   queueAssignmentsUpdated          AdminQueueAssignment[]    @relation("QueueAssignmentEditor")
+  referralCode                     ReferralCode?
+  referralClaimsReceived           ReferralClaim[]           @relation("ReferralInvitee")
 }
 
 model AuthUser {
@@ -841,6 +843,30 @@ model SessionReminder {
   @@index([scheduledFor, sentAt])
 }
 
+model ReferralCode {
+  id        String          @id @default(cuid())
+  userId    String          @unique
+  code      String          @unique @db.VarChar(16)
+  createdAt DateTime        @default(now())
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims    ReferralClaim[]
+
+  @@index([createdAt])
+}
+
+model ReferralClaim {
+  id             String       @id @default(cuid())
+  referralCodeId String
+  inviteeId      String       @unique
+  qualifiedAt    DateTime     @default(now())
+  rewardedAt     DateTime?
+  referralCode   ReferralCode @relation(fields: [referralCodeId], references: [id], onDelete: Restrict)
+  invitee        User         @relation("ReferralInvitee", fields: [inviteeId], references: [id], onDelete: Restrict)
+
+  @@index([referralCodeId, qualifiedAt])
+  @@index([rewardedAt])
+}
+
 model CreditAccount {
   id        String              @id @default(cuid())
   code      String              @unique @db.VarChar(180)
@@ -854,23 +880,23 @@ model CreditAccount {
 }
 
 model CreditLedgerTransaction {
-  id             String                    @id @default(cuid())
-  idempotencyKey String                    @unique @db.VarChar(180)
-  type           CreditTransactionType
-  actorId        String?
-  sessionId      String?
-  reason         String?                   @db.VarChar(500)
-  metadata       Json?
-  reversalOfId   String?
-  createdAt      DateTime                  @default(now())
-  actor          User?                     @relation("CreditTransactionActor", fields: [actorId], references: [id], onDelete: SetNull)
-  session        Session?                  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  reversalOf     CreditLedgerTransaction?  @relation("CreditReversal", fields: [reversalOfId], references: [id], onDelete: SetNull)
-  reversals      CreditLedgerTransaction[] @relation("CreditReversal")
-  entries        CreditLedgerEntry[]
-  holdCreated    CreditHold?               @relation("HoldCreationTransaction")
-  holdClosed     CreditHold?               @relation("HoldClosureTransaction")
-  creditGift     CreditGift?
+  id                   String                    @id @default(cuid())
+  idempotencyKey       String                    @unique @db.VarChar(180)
+  type                 CreditTransactionType
+  actorId              String?
+  sessionId            String?
+  reason               String?                   @db.VarChar(500)
+  metadata             Json?
+  reversalOfId         String?
+  createdAt            DateTime                  @default(now())
+  actor                User?                     @relation("CreditTransactionActor", fields: [actorId], references: [id], onDelete: SetNull)
+  session              Session?                  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  reversalOf           CreditLedgerTransaction?  @relation("CreditReversal", fields: [reversalOfId], references: [id], onDelete: SetNull)
+  reversals            CreditLedgerTransaction[] @relation("CreditReversal")
+  entries              CreditLedgerEntry[]
+  holdCreated          CreditHold?               @relation("HoldCreationTransaction")
+  holdClosed           CreditHold?               @relation("HoldClosureTransaction")
+  creditGift           CreditGift?
   creditCodeRedemption CreditCodeRedemption?
 
   @@index([type, createdAt])

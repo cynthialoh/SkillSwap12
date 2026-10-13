@@ -3,7 +3,14 @@ import Link from "next/link";
 import { OnboardingForm } from "./onboarding-form";
 import { getActor } from "@/lib/dal";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>;
+}) {
+  const params = await searchParams;
+  const suppliedCode = params.ref ?? "";
+  const referralCode = /^[A-F0-9]{12}$/.test(suppliedCode) ? suppliedCode : "";
   const actor = await getActor();
   if (!actor) redirect("/sign-in");
   if (actor.status !== "ACTIVE") redirect("/");
@@ -22,7 +29,11 @@ export default async function OnboardingPage() {
           You have one Member account for both teaching and learning. Add what you can share and
           what you hope to learn.
         </p>
-        <OnboardingForm name={actor.profile?.displayName ?? ""} profile={actor.profile} />
+        <OnboardingForm
+          name={actor.profile?.displayName ?? ""}
+          profile={actor.profile}
+          referralCode={referralCode}
+        />
       </section>
     </main>
   );

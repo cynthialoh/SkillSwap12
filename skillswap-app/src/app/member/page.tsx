@@ -4,6 +4,8 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { getActor, requireMemberPage } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { ensureProfileCompletionReward, getMemberCreditTotals } from "@/lib/credit-ledger";
+import { ReferralInviteCard } from "@/components/referral-invite-card";
+import { ensureMemberReferralCode } from "@/lib/referrals";
 
 const dashboardLinks = [
   { href: "/member", icon: "⌂", label: "Overview" },
@@ -26,27 +28,39 @@ export default async function MemberPage({
   const timezone = profile?.timezone || "UTC";
   const prisma = getPrismaClient();
   await prisma.$transaction((tx) => ensureProfileCompletionReward(tx, member.id));
+  const referralCode = await ensureMemberReferralCode(member.id);
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const [params, totals, earnedThisMonth, completedExchanges] = await Promise.all([
-    searchParams,
-    prisma.$transaction((tx) => getMemberCreditTotals(tx, member.id)),
-    prisma.creditLedgerEntry.aggregate({
-      where: {
-        account: { userId: member.id, type: "MEMBER_SPENDABLE" },
-        amount: { gt: 0 },
-        createdAt: { gte: monthStart },
-      },
-      _sum: { amount: true },
-    }),
-    prisma.session.count({
-      where: {
-        status: "COMPLETED",
-        OR: [{ learnerId: member.id }, { teacherId: member.id }],
-      },
-    }),
-  ]);
+  const [params, totals, earnedThisMonth, completedExchanges, completedInvites] = await Promise.all(
+    [
+      searchParams,
+      prisma.$transaction((tx) => getMemberCreditTotals(tx, member.id)),
+      prisma.creditLedgerEntry.aggregate({
+        where: {
+          account: { userId: member.id, type: "MEMBER_SPENDABLE" },
+          amount: { gt: 0 },
+          createdAt: { gte: monthStart },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.session.count({
+        where: {
+          status: "COMPLETED",
+          OR: [{ learnerId: member.id }, { teacherId: member.id }],
+        },
+      }),
+      prisma.referralClaim.count({
+        where: { referralCode: { userId: member.id }, rewardedAt: { not: null } },
+      }),
+    ],
+  );
+  const inviteOrigin =
+    process.env.BETTER_AUTH_URL ?? process.env.APP_BASE_URL ?? "https://skillswap110.netlify.app";
+  const referralUrl = new URL(
+    `/sign-up?ref=${encodeURIComponent(referralCode)}`,
+    inviteOrigin,
+  ).toString();
 
   const name = profile?.displayName?.trim().split(/\s+/)[0] || "there";
   const hour = Number(
@@ -91,6 +105,18 @@ export default async function MemberPage({
             Your profile is complete. 4 Skill Credits have been added to your wallet.
           </p>
         )}
+        {params.welcome === "referral" && (
+          <p className="member-credit-welcome" role="status">
+            Your profile is complete. You received 4 Skill Credits, and your inviter received 3
+            referral credits.
+          </p>
+        )}
+
+        <ReferralInviteCard
+          code={referralCode}
+          completedInvites={completedInvites}
+          referralUrl={referralUrl}
+        />
 
         <section className="member-dashboard-cards" aria-label="Your SkillSwap overview">
           <article className="member-stat-card member-credit-card">

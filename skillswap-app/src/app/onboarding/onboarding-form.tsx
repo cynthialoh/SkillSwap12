@@ -6,8 +6,10 @@ import { saveOnboarding } from "./actions";
 export function OnboardingForm({
   name,
   profile,
+  referralCode,
 }: {
   name: string;
+  referralCode?: string;
   profile?: {
     displayName: string | null;
     bio: string | null;
@@ -29,6 +31,7 @@ export function OnboardingForm({
 
   return (
     <form action={action} className="onboarding-form">
+      {referralCode && <input name="referralCode" type="hidden" value={referralCode} />}
       <label>
         What should we call you?
         <input

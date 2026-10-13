@@ -8,6 +8,7 @@ import type {
 
 export const APPROVED_CREDIT_POLICY_VERSION = "phase1-approved-v1";
 export const PROFILE_COMPLETION_REWARD = 4;
+export const REFERRAL_INVITER_REWARD = 3;
 
 export function creditPostingEnabled() {
   return (
@@ -163,6 +164,62 @@ export async function ensureProfileCompletionReward(tx: Prisma.TransactionClient
       },
     ],
   });
+  return true;
+}
+
+/** Credit the inviter once an active referred member completes onboarding. */
+export async function rewardReferralInviter(
+  tx: Prisma.TransactionClient,
+  inviteeId: string,
+  rawCode: string,
+) {
+  const code = rawCode.trim().toUpperCase();
+  if (!/^[A-F0-9]{12}$/.test(code)) return false;
+
+  const [referralCode, invitee] = await Promise.all([
+    tx.referralCode.findUnique({ where: { code }, select: { id: true, userId: true } }),
+    tx.user.findUnique({
+      where: { id: inviteeId },
+      select: { status: true, memberProfile: { select: { onboardingCompletedAt: true } } },
+    }),
+  ]);
+  if (
+    !referralCode ||
+    referralCode.userId === inviteeId ||
+    invitee?.status !== "ACTIVE" ||
+    !invitee.memberProfile?.onboardingCompletedAt
+  ) {
+    return false;
+  }
+
+  const claim = await tx.referralClaim.upsert({
+    where: { inviteeId },
+    create: { referralCodeId: referralCode.id, inviteeId },
+    update: {},
+  });
+  if (claim.referralCodeId !== referralCode.id || claim.rewardedAt) return false;
+
+  for (const userId of [referralCode.userId, inviteeId].sort()) {
+    await lockCreditWallet(tx, userId);
+  }
+  const inviterAccount = await ensureCreditAccount(tx, "MEMBER_SPENDABLE", referralCode.userId);
+  const referralReserve = await ensureCreditAccount(tx, "REFERRAL_RESERVE");
+  await postBalancedCreditTransaction(tx, {
+    idempotencyKey: `referral-inviter-reward:${claim.id}`,
+    type: "REFERRAL",
+    actorId: inviteeId,
+    reason: "Reward for inviting a member who completed their profile.",
+    metadata: {
+      reward: "REFERRAL_INVITER",
+      referralClaimId: claim.id,
+      amount: REFERRAL_INVITER_REWARD,
+    },
+    postings: [
+      { accountId: referralReserve.id, amount: -REFERRAL_INVITER_REWARD, source: "REFERRAL" },
+      { accountId: inviterAccount.id, amount: REFERRAL_INVITER_REWARD, source: "REFERRAL" },
+    ],
+  });
+  await tx.referralClaim.update({ where: { id: claim.id }, data: { rewardedAt: new Date() } });
   return true;
 }
 
