@@ -246,7 +246,8 @@ export default async function AdminTrustPage() {
                       </label>
                       {!creditPostingEnabled() && needsLedger && (
                         <p className="privacy-notice">
-                          Settlement is disabled by default until the approved Phase 1 policy is explicitly enabled.
+                          Settlement is disabled by default until the approved Phase 1 policy is
+                          explicitly enabled.
                         </p>
                       )}
                       <button

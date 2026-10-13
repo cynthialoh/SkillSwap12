@@ -953,16 +953,20 @@ h1 span {
   color: var(--muted);
 }
 .app-back-button {
+  position: fixed;
+  z-index: 40;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
   display: inline-flex;
   align-items: center;
   gap: 7px;
   min-height: 38px;
-  margin: 0 0 8px;
-  padding: 0 11px;
+  padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--teal-dark, var(--primary, #08786f));
   background: var(--surface, #fff);
+  box-shadow: 0 5px 18px rgb(20 45 50 / 15%);
   font: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -980,6 +984,12 @@ h1 span {
 .app-back-button:focus-visible {
   outline: 2px solid var(--primary, #13897e);
   outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .app-back-button {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(94px, calc(env(safe-area-inset-bottom) + 88px));
+  }
 }
 .settings-panel {
   margin: 16px 0;

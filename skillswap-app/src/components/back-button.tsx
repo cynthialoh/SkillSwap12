@@ -1,14 +1,29 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
-type BackButtonProps = {
-  fallbackHref: string;
-  label?: string;
-};
-
-export function BackButton({ fallbackHref, label = "Back" }: BackButtonProps) {
+export function BackButton() {
   const router = useRouter();
+  const pathname = usePathname();
+  const lastPathname = useRef<string | null>(null);
+  const hasInAppHistory = useRef(false);
+
+  useEffect(() => {
+    if (lastPathname.current && lastPathname.current !== pathname) {
+      hasInAppHistory.current = true;
+    }
+    lastPathname.current = pathname;
+  }, [pathname]);
+
+  function getFallbackHref() {
+    if (pathname === "/") return "/sign-in";
+    if (pathname === "/member") return "/";
+    if (pathname === "/admin") return "/member";
+    if (pathname.startsWith("/admin/")) return "/admin";
+    if (["/sign-in", "/sign-up", "/onboarding"].includes(pathname)) return "/";
+    return "/member";
+  }
 
   function goBack() {
     let cameFromThisApp = false;
@@ -20,12 +35,12 @@ export function BackButton({ fallbackHref, label = "Back" }: BackButtonProps) {
       }
     }
 
-    if (cameFromThisApp) {
+    if (cameFromThisApp || hasInAppHistory.current) {
       router.back();
       return;
     }
 
-    router.replace(fallbackHref);
+    router.replace(getFallbackHref());
   }
 
   return (
@@ -33,7 +48,7 @@ export function BackButton({ fallbackHref, label = "Back" }: BackButtonProps) {
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
         <path d="m14.5 5-7 7 7 7M8 12h12" />
       </svg>
-      <span>{label}</span>
+      <span>Back</span>
     </button>
   );
 }

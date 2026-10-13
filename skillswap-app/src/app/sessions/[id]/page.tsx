@@ -148,7 +148,8 @@ export default async function SessionDetailPage({
             {session.exchangeRequest.targetSkillName} and{" "}
             {session.exchangeRequest.directSwap.offerSkillValueCredits} credits for{" "}
             {session.exchangeRequest.offerSkillName}. The half-value rounding proposal is ceiling,
-            minimum 1 credit. Credit movement remains disabled by default until the approved policy is explicitly enabled.
+            minimum 1 credit. Credit movement remains disabled by default until the approved policy
+            is explicitly enabled.
           </p>
           <ol className="activity-list">
             {session.exchangeRequest.sessions.map((part) => (
