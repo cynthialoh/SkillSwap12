@@ -60,6 +60,10 @@ export default async function SessionsPage({
     if (!scheduledLegs.has(1)) return [{ request, legNumber: 1 }];
     return scheduledLegs.has(2) ? [] : [{ request, legNumber: 2 }];
   });
+  const incomingSessionRequests = sessions.filter((session) => {
+    const proposal = session.proposals[0];
+    return proposal && proposal.proposerId !== member.id && proposal.responseDueAt > new Date();
+  });
   const timezone = member.profile?.timezone || "UTC";
   return (
     <main className="interaction-page">
@@ -80,6 +84,45 @@ export default async function SessionsPage({
       </header>
       {params.notice && <p className="success-notice">{params.notice}</p>}
       {params.error && <p className="error-notice">{params.error}</p>}
+      {incomingSessionRequests.length > 0 && (
+        <section className="interaction-panel">
+          <h2>Session requests to review</h2>
+          <p className="form-hint">
+            Review each proposed time here. You can accept or decline it on the request details
+            page.
+          </p>
+          <div className="session-list">
+            {incomingSessionRequests.map((session) => {
+              const proposal = session.proposals[0]!;
+              const other = member.id === session.learnerId ? session.teacher : session.learner;
+              const skillName =
+                session.legNumber === 1
+                  ? session.exchangeRequest.targetSkillName
+                  : session.exchangeRequest.offerSkillName;
+              return (
+                <article className="session-card" key={session.id}>
+                  <div className="request-board-heading">
+                    <div>
+                      <h3>{skillName}</h3>
+                      <p>
+                        {session.exchangeRequest.title} · With{" "}
+                        {other.memberProfile?.displayName || "SkillSwap Member"}
+                      </p>
+                    </div>
+                    <span className="status-pill">Needs your response</span>
+                  </div>
+                  <p>
+                    Proposed time: <strong>{formatSessionTime(proposal.startsAt, timezone)}</strong>
+                  </p>
+                  <Link className="primary-button" href={`/sessions/${session.id}`}>
+                    Review and accept
+                  </Link>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
       {readySessions.length > 0 && (
         <section className="interaction-panel">
           <h2>Ready to schedule</h2>

@@ -8,6 +8,7 @@ const links = [
   { href: "/discover", icon: "⌕", label: "Discover" },
   { href: "/profile/edit", icon: "✳", label: "My skills" },
   { href: "/exchanges", icon: "⇄", label: "Exchanges" },
+  { href: "/sessions", icon: "◷", label: "Sessions" },
   { href: "/connections", icon: "▤", label: "Chat" },
   { href: "/wallet", icon: "◉", label: "Credits" },
   { href: "/saved", icon: "♡", label: "Saved" },
