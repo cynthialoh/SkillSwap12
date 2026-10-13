@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -34,21 +34,56 @@ function hasInstalledFlag() {
   }
 }
 
+function getInstalledSnapshot() {
+  return isStandaloneMode() || hasInstalledFlag();
+}
+
+function subscribeToInstalledStatus(onChange: () => void) {
+  const handleInstallAvailable = () => {
+    setInstalledFlag(false);
+    onChange();
+  };
+  const handleInstalled = () => {
+    setInstalledFlag(true);
+    onChange();
+  };
+
+  window.addEventListener("beforeinstallprompt", handleInstallAvailable);
+  window.addEventListener("appinstalled", handleInstalled);
+  window.addEventListener("skillswap:pwa-status", onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener("beforeinstallprompt", handleInstallAvailable);
+    window.removeEventListener("appinstalled", handleInstalled);
+    window.removeEventListener("skillswap:pwa-status", onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+function getIsIosSnapshot() {
+  return (
+    /iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
+    (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1)
+  );
+}
+
 export function PwaClient() {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
-  const [isIos, setIsIos] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(true);
+  const isIos = useSyncExternalStore(
+    () => () => {},
+    getIsIosSnapshot,
+    () => false,
+  );
+  const isInstalled = useSyncExternalStore(
+    subscribeToInstalledStatus,
+    getInstalledSnapshot,
+    () => true,
+  );
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     const standalone = isStandaloneMode();
-    const installed = standalone || hasInstalledFlag();
-    setIsInstalled(installed);
     if (standalone) setInstalledFlag(true);
-    setIsIos(
-      /iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
-        (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1),
-    );
 
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       void navigator.serviceWorker
@@ -61,13 +96,11 @@ export function PwaClient() {
       // Browsers only offer this event while installation is available. If we
       // remembered an earlier installation, this means the app was removed.
       setInstalledFlag(false);
-      setIsInstalled(false);
       setDismissed(false);
       setInstallPrompt(event as InstallPromptEvent);
     };
     const handleInstalled = () => {
       setInstalledFlag(true);
-      setIsInstalled(true);
       setInstallPrompt(null);
     };
 
@@ -85,7 +118,7 @@ export function PwaClient() {
     const choice = await installPrompt.userChoice;
     if (choice.outcome === "accepted") {
       setInstalledFlag(true);
-      setIsInstalled(true);
+      window.dispatchEvent(new Event("skillswap:pwa-status"));
     }
     setInstallPrompt(null);
   }
