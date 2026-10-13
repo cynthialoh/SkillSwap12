@@ -2,7 +2,7 @@ import Link from "next/link";
 import { randomUUID } from "node:crypto";
 import { requireMemberPage } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
-import { creditPostingEnabled, getMemberCreditTotals } from "@/lib/credit-ledger";
+import { creditGiftingEnabled, getMemberCreditTotals } from "@/lib/credit-ledger";
 import { sendCreditGift } from "../gift-actions";
 
 type Search = Promise<{ q?: string; to?: string; sent?: string }>;
@@ -56,7 +56,7 @@ export default async function GiftCreditsPage({ searchParams }: { searchParams: 
           })
         : [],
   ]);
-  const enabled = creditPostingEnabled();
+  const enabled = creditGiftingEnabled();
   return (
     <main className="interaction-page">
       <Link href="/wallet" className="text-link">
@@ -80,8 +80,8 @@ export default async function GiftCreditsPage({ searchParams }: { searchParams: 
         </p>
         {!enabled && (
           <p className="privacy-notice">
-            Credit movement is disabled until the Phase 1 ledger and cancellation rules are
-            approved. No gift will be sent.
+            Credit gifting is currently turned off. The approved credit policy must be enabled for
+            gifts in the app’s hosting settings before a gift can be sent.
           </p>
         )}
         {!to && (
@@ -108,7 +108,7 @@ export default async function GiftCreditsPage({ searchParams }: { searchParams: 
                   <input type="hidden" name="idempotencyToken" value={randomUUID()} />
                   <label>
                     Amount
-                    <select name="amount" defaultValue="5" disabled={!enabled}>
+                    <select name="amount" defaultValue="1" disabled={!enabled}>
                       <option value="1">1 credit</option>
                       <option value="5">5 credits</option>
                       <option value="10">10 credits</option>

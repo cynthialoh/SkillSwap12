@@ -2743,7 +2743,7 @@ h1 span {
   display: grid;
   width: min(100%, 650px);
   min-height: 83px;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   align-items: stretch;
   margin: 0 auto;
   padding: 8px 8px max(8px, env(safe-area-inset-bottom));

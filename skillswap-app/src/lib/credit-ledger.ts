@@ -17,6 +17,13 @@ export function creditPostingEnabled() {
   );
 }
 
+export function creditGiftingEnabled() {
+  return (
+    process.env.CREDIT_GIFTS_ENABLED === "true" &&
+    process.env.SKILLSWAP_CREDIT_POLICY_APPROVED_VERSION === APPROVED_CREDIT_POLICY_VERSION
+  );
+}
+
 export class CreditLedgerError extends Error {
   constructor(message: string) {
     super(message);

@@ -12,6 +12,7 @@ const dashboardLinks = [
   { href: "/discover", icon: "⌕", label: "Discover" },
   { href: "/profile/edit", icon: "✳", label: "My skills" },
   { href: "/exchanges", icon: "⇄", label: "Exchanges" },
+  { href: "/connections", icon: "▤", label: "Chat" },
   { href: "/wallet", icon: "◉", label: "Credits" },
   { href: "/saved", icon: "♡", label: "Saved" },
 ];

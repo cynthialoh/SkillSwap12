@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
 import {
-  creditPostingEnabled,
+  creditGiftingEnabled,
   ensureCreditAccount,
   getMemberCreditTotals,
   lockCreditWallet,
@@ -34,9 +34,9 @@ export async function sendCreditGift(data: FormData) {
     !/^[0-9a-f-]{36}$/i.test(token)
   )
     return;
-  if (!creditPostingEnabled())
+  if (!creditGiftingEnabled())
     throw new Error(
-      "Credit gifts are disabled by default until the approved Phase 1 policy is explicitly enabled.",
+      "Credit gifts are disabled until gifting is enabled with the approved Phase 1 policy.",
     );
   const prisma = getPrismaClient();
   const giftIdempotencyKey = `credit-gift:${sender.id}:${token}`;
