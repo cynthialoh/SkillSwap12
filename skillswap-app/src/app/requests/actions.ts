@@ -9,6 +9,7 @@ import type {
 } from "@/generated/prisma/client";
 import { requireMember } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
+import { enqueueNotification } from "@/lib/notifications";
 import {
   assertAvailableMember,
   assertNoBlock,
@@ -361,6 +362,9 @@ export async function createExchangeRequest(data: FormData) {
   const expectedOutcome = value(data, "expectedOutcome");
   const message = value(data, "message");
   const returnPath = "/exchanges";
+  const createdRequest: {
+    current: { id: string; recipientId: string; targetSkillName: string } | null;
+  } = { current: null };
   const error = await capture(async () => {
     if (
       recipientId === member.id ||
@@ -507,6 +511,11 @@ export async function createExchangeRequest(data: FormData) {
           message: message || null,
         },
       });
+      createdRequest.current = {
+        id: request.id,
+        recipientId: request.recipientId,
+        targetSkillName: request.targetSkillName,
+      };
       await tx.requestActivity.create({
         data: {
           exchangeRequestId: request.id,
@@ -519,6 +528,18 @@ export async function createExchangeRequest(data: FormData) {
     });
   });
   if (error) go(returnPath, error);
+  if (createdRequest.current) {
+    await enqueueNotification({
+      recipientId: createdRequest.current.recipientId,
+      actorId: member.id,
+      category: "SESSION",
+      eventKey: "EXCHANGE_REQUEST_RECEIVED",
+      idempotencyKey: `exchange-request:${createdRequest.current.id}:received`,
+      title: "You received a skill exchange request",
+      body: `${member.profile?.displayName || "A SkillSwap Member"} wants to learn ${createdRequest.current.targetSkillName}.`,
+      href: "/exchanges",
+    });
+  }
   revalidatePath("/exchanges");
   revalidatePath("/requests");
   go("/exchanges", "Request sent.", "notice");
@@ -528,6 +549,9 @@ export async function decideExchangeRequest(data: FormData) {
   const member = await requireMember();
   const requestId = value(data, "requestId");
   const decision = value(data, "decision") as ExchangeRequestStatus;
+  const decidedRequest: { current: { id: string; requesterId: string; title: string } | null } = {
+    current: null,
+  };
   const error = await capture(async () => {
     if (!["ACCEPTED", "DECLINED"].includes(decision))
       throw new InteractionError("Choose accept or decline.");
@@ -538,11 +562,17 @@ export async function decideExchangeRequest(data: FormData) {
         requesterId: true,
         recipientId: true,
         type: true,
+        title: true,
         targetSkillValueCredits: true,
         offerSkillValueCredits: true,
       },
     });
     if (!request) throw new InteractionError("This request is no longer available.");
+    decidedRequest.current = {
+      id: request.id,
+      requesterId: request.requesterId,
+      title: request.title,
+    };
     if (decision === "ACCEPTED") {
       const recipients = await getPrismaClient().memberProfile.findMany({
         where: { userId: { in: [request.requesterId, request.recipientId] } },
@@ -680,6 +710,18 @@ export async function decideExchangeRequest(data: FormData) {
     });
   });
   if (error) go("/exchanges", error);
+  if (decidedRequest.current) {
+    await enqueueNotification({
+      recipientId: decidedRequest.current.requesterId,
+      actorId: member.id,
+      category: "SESSION",
+      eventKey: `EXCHANGE_REQUEST_${decision}`,
+      idempotencyKey: `exchange-request:${decidedRequest.current.id}:${decision.toLowerCase()}`,
+      title: `Your exchange request was ${decision.toLowerCase()}`,
+      body: `${member.profile?.displayName || "The other Member"} ${decision.toLowerCase()} “${decidedRequest.current.title}”.`,
+      href: "/exchanges",
+    });
+  }
   revalidatePath("/exchanges");
   revalidatePath("/connections");
   go(

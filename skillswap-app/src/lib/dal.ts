@@ -31,6 +31,7 @@ export async function getActor() {
       memberProfile: {
         select: {
           displayName: true,
+          profileImageObjectKey: true,
           bio: true,
           location: true,
           timezone: true,

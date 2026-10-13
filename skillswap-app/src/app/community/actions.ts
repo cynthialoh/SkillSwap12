@@ -2,11 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { randomUUID } from "node:crypto";
 import type { CommunityPostType, CommunityVisibility } from "@/generated/prisma/client";
 import { requireMember } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { consumeRateLimit, InteractionError } from "@/lib/interaction-policy";
 import { enqueueNotification } from "@/lib/notifications";
+import { deletePrivateR2Object, uploadPrivateR2Object } from "@/lib/storage/r2";
+import {
+  memberMediaMaxBytes,
+  memberMediaTypes,
+  mediaMatchesSignature,
+} from "@/lib/member-media-validation";
 
 const field = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const types: CommunityPostType[] = ["TIP", "PROJECT", "PROGRESS", "TUTORIAL"];
@@ -54,8 +61,14 @@ export async function createCommunityPost(data: FormData) {
   const member = await requireMember();
   const type = field(data, "type") as CommunityPostType;
   const visibility = field(data, "visibility") as CommunityVisibility;
-  const title = field(data, "title");
+  const title =
+    field(data, "title") ||
+    (type === "PROGRESS" ? "What I learned today" : "Learning community share");
   const body = field(data, "body");
+  const mediaFiles = data
+    .getAll("media")
+    .filter((value): value is File => value instanceof File && value.size > 0);
+  const mediaBytes = mediaFiles.reduce((total, file) => total + file.size, 0);
   const skillTags = [
     ...new Set(
       field(data, "skillTags")
@@ -69,11 +82,24 @@ export async function createCommunityPost(data: FormData) {
     !visibilities.includes(visibility) ||
     title.length < 3 ||
     title.length > 120 ||
-    body.length < 20 ||
+    (body.length < 20 && mediaFiles.length === 0) ||
     body.length > 2000 ||
-    skillTags.some((tag) => tag.length > 40)
+    skillTags.some((tag) => tag.length > 40) ||
+    mediaFiles.length > 4 ||
+    mediaBytes > 15 * 1024 * 1024 ||
+    mediaFiles.some(
+      (file) => !memberMediaTypes.has(file.type) || file.size > memberMediaMaxBytes,
+    ) ||
+    mediaFiles.filter((file) => file.type.startsWith("video/")).length > 1
   ) {
-    redirect("/community?error=Check+the+post+type%2C+title%2C+body%2C+and+skill+tags.");
+    redirect("/community?error=Check+the+post+details+and+choose+up+to+4+valid+media+files.");
+  }
+  const validatedFiles: Array<{ file: File; bytes: Uint8Array }> = [];
+  for (const file of mediaFiles) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!mediaMatchesSignature(file.type, bytes))
+      redirect("/community?error=One+of+the+media+files+is+not+valid.");
+    validatedFiles.push({ file, bytes });
   }
   try {
     await consumeRateLimit(member.id, "community-post", 5, 24 * 60 * 60 * 1000);
@@ -86,6 +112,25 @@ export async function createCommunityPost(data: FormData) {
     data: { authorId: member.id, type, visibility, title, body, skillTags },
     select: { id: true },
   });
+  const uploaded: Array<{ objectKey: string; contentType: string; sizeBytes: number }> = [];
+  try {
+    for (const { file, bytes } of validatedFiles) {
+      const objectKey = `member-media/${member.id}/posts/${post.id}/${randomUUID()}`;
+      await uploadPrivateR2Object(objectKey, Buffer.from(bytes), file.type);
+      uploaded.push({ objectKey, contentType: file.type, sizeBytes: file.size });
+    }
+    if (uploaded.length) {
+      await prisma.memberMedia.createMany({
+        data: uploaded.map((item) => ({ userId: member.id, communityPostId: post.id, ...item })),
+      });
+    }
+  } catch {
+    await Promise.all(
+      uploaded.map(({ objectKey }) => deletePrivateR2Object(objectKey).catch(() => {})),
+    );
+    await prisma.communityPost.delete({ where: { id: post.id } });
+    redirect("/community?error=media-upload");
+  }
   const followers = await prisma.followedPerson.findMany({
     where: { personId: member.id, user: { is: { status: "ACTIVE", adminGrant: null } } },
     orderBy: { createdAt: "desc" },

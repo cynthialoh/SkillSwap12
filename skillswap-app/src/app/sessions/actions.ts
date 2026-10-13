@@ -228,8 +228,8 @@ export async function proposeSessionTime(data: FormData) {
     revalidatePath("/sessions");
     await notify(
       member.id === learnerId ? teacherId : learnerId,
-      "SkillSwap session time proposed",
-      "A member proposed a time for your learning session.",
+      "New session request",
+      "A member wants to book a learning session with you. Review the proposed time.",
       session.id,
     );
     go(`/sessions/${session.id}`, "Time proposal sent.", "notice");

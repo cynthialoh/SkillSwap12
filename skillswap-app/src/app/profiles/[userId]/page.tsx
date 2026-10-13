@@ -4,6 +4,8 @@ import { getProfileViewForMember } from "@/lib/profile-dto";
 import { AccessRequestForm } from "@/app/profile/profile-forms";
 import { blockProfile } from "@/app/profile/actions";
 import { getPrismaClient } from "@/lib/db/prisma";
+import Image from "next/image";
+import { MemberGallery } from "@/app/profile/member-media-forms";
 
 export default async function MemberProfilePage({
   params,
@@ -14,49 +16,62 @@ export default async function MemberProfilePage({
   const { userId } = await params;
   const profile = await getProfileViewForMember(member.id, userId);
   if (!profile) notFound();
-  const [reputation, ratingSummary, completedExchanges, trustPolicy] = await Promise.all([
-    getPrismaClient().memberProfile.findUnique({
-      where: { userId },
-      select: {
-        trustLevel: true,
-        verifiedAt: true,
-        reviewsReceived: {
-          where: { isPublicVisible: true },
-          orderBy: { createdAt: "desc" },
-          take: 8,
-          select: {
-            rating: true,
-            publicFeedback: true,
-            createdAt: true,
-            reviewer: { select: { memberProfile: { select: { displayName: true } } } },
+  const [reputation, ratingSummary, completedExchanges, trustPolicy, profileMedia] =
+    await Promise.all([
+      getPrismaClient().memberProfile.findUnique({
+        where: { userId },
+        select: {
+          trustLevel: true,
+          verifiedAt: true,
+          reviewsReceived: {
+            where: { isPublicVisible: true },
+            orderBy: { createdAt: "desc" },
+            take: 8,
+            select: {
+              rating: true,
+              publicFeedback: true,
+              createdAt: true,
+              reviewer: { select: { memberProfile: { select: { displayName: true } } } },
+            },
           },
         },
-      },
-    }),
-    getPrismaClient().review.aggregate({
-      where: { revieweeId: userId, isPublicVisible: true },
-      _avg: { rating: true },
-      _count: { _all: true },
-    }),
-    getPrismaClient().session.findMany({
-      where: {
-        status: "COMPLETED",
-        OR: [{ learnerId: userId }, { teacherId: userId }],
-        exchangeRequest: {
-          OR: [
-            { type: "CREDIT_LEARNING" },
-            {
-              type: "DIRECT_SWAP",
-              directSwap: { is: { status: { in: ["SETTLED", "COMPLETED_PENDING_SETTLEMENT"] } } },
-            },
-          ],
+      }),
+      getPrismaClient().review.aggregate({
+        where: { revieweeId: userId, isPublicVisible: true },
+        _avg: { rating: true },
+        _count: { _all: true },
+      }),
+      getPrismaClient().session.findMany({
+        where: {
+          status: "COMPLETED",
+          OR: [{ learnerId: userId }, { teacherId: userId }],
+          exchangeRequest: {
+            OR: [
+              { type: "CREDIT_LEARNING" },
+              {
+                type: "DIRECT_SWAP",
+                directSwap: { is: { status: { in: ["SETTLED", "COMPLETED_PENDING_SETTLEMENT"] } } },
+              },
+            ],
+          },
         },
-      },
-      select: { exchangeRequestId: true },
-      distinct: ["exchangeRequestId"],
-    }),
-    getPrismaClient().trustPolicy.findUnique({ where: { id: "default" } }),
-  ]);
+        select: { exchangeRequestId: true },
+        distinct: ["exchangeRequestId"],
+      }),
+      getPrismaClient().trustPolicy.findUnique({ where: { id: "default" } }),
+      profile.kind === "private-preview"
+        ? Promise.resolve([])
+        : getPrismaClient().memberMedia.findMany({
+            where: { userId, communityPostId: null },
+            orderBy: { createdAt: "desc" },
+            take: 12,
+            select: { id: true, contentType: true },
+          }),
+    ]);
+  const profileImage = await getPrismaClient().memberProfile.findUnique({
+    where: { userId },
+    select: { profileImageObjectKey: true },
+  });
   const currentTrustLevel = reputation?.trustLevel ?? 1;
   const trustThresholds = [
     0,
@@ -73,6 +88,16 @@ export default async function MemberProfilePage({
       </a>
       <section className="settings-panel public-profile-card">
         <p className="section-kicker">SKILLSWAP MEMBER · JOINED {profile.joinedYear}</p>
+        {profile.kind !== "private-preview" && profileImage?.profileImageObjectKey && (
+          <Image
+            className="public-member-avatar"
+            src={`/api/member-avatar/${userId}`}
+            width={96}
+            height={96}
+            unoptimized
+            alt={`${profile.displayName}'s profile picture`}
+          />
+        )}
         <h1>{profile.displayName}</h1>
         <div className="profile-contact-actions">
           <a className="primary-button" href={`/exchanges/new?targetUserId=${profile.userId}`}>
@@ -121,6 +146,12 @@ export default async function MemberProfilePage({
                   ))}
               </ul>
             )}
+          </section>
+        )}
+        {profileMedia.length > 0 && (
+          <section className="reputation-panel">
+            <h2>Photos and videos</h2>
+            <MemberGallery items={profileMedia} />
           </section>
         )}
         {profile.kind === "private-preview" ? (

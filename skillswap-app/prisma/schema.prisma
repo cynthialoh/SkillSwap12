@@ -362,6 +362,7 @@ model User {
   notificationsAuthored            Notification[]            @relation("NotificationActor")
   notificationPreference           NotificationPreference?
   communityPosts                   CommunityPost[]
+  memberMedia                      MemberMedia[]
   learningPlans                    LearningPlan[]
   communityReactions               CommunityPostReaction[]
   communityComments                CommunityPostComment[]
@@ -448,6 +449,7 @@ model Identity {
 model MemberProfile {
   userId                   String            @id
   displayName              String?
+  profileImageObjectKey    String?           @db.VarChar(300)
   bio                      String?           @db.VarChar(500)
   location                 String?           @db.VarChar(120)
   timezone                 String            @default("UTC") @db.VarChar(80)
@@ -1268,9 +1270,24 @@ model CommunityPost {
   comments   CommunityPostComment[]
   saves      CommunityPostSave[]
   reports    CommunityContentReport[]
+  media      MemberMedia[]
 
   @@index([status, visibility, createdAt])
   @@index([authorId, status, createdAt])
+}
+
+model MemberMedia {
+  id              String         @id @default(cuid())
+  userId          String
+  communityPostId String?
+  objectKey       String         @unique @db.VarChar(300)
+  contentType     String         @db.VarChar(80)
+  sizeBytes       Int
+  createdAt       DateTime       @default(now())
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  communityPost   CommunityPost? @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+
+  @@index([userId, communityPostId, createdAt])
 }
 
 model LearningPlan {

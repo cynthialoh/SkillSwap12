@@ -2,6 +2,10 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PwaClient } from "./pwa-client";
 import { BackButton } from "@/components/back-button";
+import { MemberAppNavigation } from "@/components/member-app-navigation";
+import { MemberActivityPoller } from "@/components/member-activity-poller";
+import { getActor } from "@/lib/dal";
+import { getPrismaClient } from "@/lib/db/prisma";
 
 export const metadata: Metadata = {
   applicationName: "SkillSwap",
@@ -27,11 +31,38 @@ export const viewport: Viewport = {
   themeColor: "#0f8176",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const actor = await getActor();
+  const isMember = actor?.status === "ACTIVE" && !actor.isAdmin;
+  let unreadNotifications = 0;
+  let unreadMessages = 0;
+  if (actor && isMember) {
+    const [notificationCount, messageCount] = await Promise.all([
+      getPrismaClient().notification.count({
+        where: { recipientId: actor.id, inApp: true, readAt: null },
+      }),
+      getPrismaClient().conversationParticipant.aggregate({
+        where: { userId: actor.id },
+        _sum: { unreadCount: true },
+      }),
+    ]);
+    unreadNotifications = notificationCount;
+    unreadMessages = messageCount._sum.unreadCount ?? 0;
+  }
+  const notificationsAfter = new Date(Date.now() - 2_000).toISOString();
   return (
     <html lang="en">
       <body>
         {children}
+        {isMember && (
+          <>
+            <MemberActivityPoller initialCursor={notificationsAfter} />
+            <MemberAppNavigation
+              unreadMessages={unreadMessages}
+              unreadNotifications={unreadNotifications}
+            />
+          </>
+        )}
         <BackButton />
         <PwaClient />
       </body>

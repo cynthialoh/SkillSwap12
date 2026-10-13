@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { requireMemberPage } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
 import {
@@ -17,6 +18,7 @@ type Search = Promise<{
   volume?: string;
   posted?: string;
   error?: string;
+  compose?: string;
 }>;
 const postTypes = ["TIP", "PROJECT", "PROGRESS", "TUTORIAL"] as const;
 
@@ -93,6 +95,12 @@ export default async function CommunityPage({ searchParams }: { searchParams: Se
       author: { select: { id: true, memberProfile: { select: { displayName: true } } } },
       reactions: { select: { userId: true } },
       saves: { where: { userId: member.id }, select: { userId: true } },
+      media: {
+        where: { communityPostId: { not: null } },
+        orderBy: { createdAt: "asc" },
+        take: 4,
+        select: { id: true, contentType: true },
+      },
       comments: {
         orderBy: { createdAt: "asc" },
         take: 3,
@@ -175,7 +183,9 @@ export default async function CommunityPage({ searchParams }: { searchParams: Se
         <p className="error-notice">
           {params.error === "post_limit"
             ? "You reached today’s post limit. Try again tomorrow."
-            : params.error}
+            : params.error === "media-upload"
+              ? "Your post could not be saved with its media. Please try again."
+              : "Check the post details and attached files, then try again."}
         </p>
       )}
       <section className="interaction-panel form-panel">
@@ -188,7 +198,11 @@ export default async function CommunityPage({ searchParams }: { searchParams: Se
         <form action={createCommunityPost} className="interaction-form">
           <label>
             Post type
-            <select name="type" required>
+            <select
+              name="type"
+              required
+              defaultValue={params.compose === "learned" ? "PROGRESS" : "TIP"}
+            >
               <option value="TIP">Tip</option>
               <option value="PROJECT">Project or demo</option>
               <option value="PROGRESS">Learning progress</option>
@@ -197,11 +211,35 @@ export default async function CommunityPage({ searchParams }: { searchParams: Se
           </label>
           <label>
             Title
-            <input name="title" minLength={3} maxLength={120} required />
+            <input
+              name="title"
+              minLength={3}
+              maxLength={120}
+              defaultValue={params.compose === "learned" ? "What I learned today" : ""}
+              placeholder="What did you learn?"
+            />
           </label>
           <label>
             What would you like to share?
-            <textarea name="body" minLength={20} maxLength={2000} rows={4} required />
+            <textarea
+              name="body"
+              minLength={20}
+              maxLength={2000}
+              rows={4}
+              placeholder="Write about what you learned, or attach a photo or short video."
+            />
+          </label>
+          <label>
+            Add photos or a short video (optional)
+            <input
+              name="media"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"
+              multiple
+            />
+            <span className="form-hint">
+              Up to 4 files, 15 MB total. Videos are limited to one per post.
+            </span>
           </label>
           <label>
             Skill tags, separated by commas
@@ -298,6 +336,30 @@ export default async function CommunityPage({ searchParams }: { searchParams: Se
                   </details>
                 </header>
                 <p className="community-post-body">{post.body}</p>
+                {post.media.length > 0 && (
+                  <div className="community-post-media">
+                    {post.media.map((asset) =>
+                      asset.contentType.startsWith("video/") ? (
+                        <video
+                          controls
+                          playsInline
+                          preload="metadata"
+                          src={`/api/member-media/${asset.id}`}
+                          key={asset.id}
+                        />
+                      ) : (
+                        <Image
+                          src={`/api/member-media/${asset.id}`}
+                          alt="Photo shared in this learning post"
+                          width={640}
+                          height={480}
+                          unoptimized
+                          key={asset.id}
+                        />
+                      ),
+                    )}
+                  </div>
+                )}
                 {post.skillTags.length > 0 && (
                   <div className="community-tags">
                     {post.skillTags.map((tag) => (

@@ -3,6 +3,7 @@ import { requireMemberPage } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { getSelfProfileForMember } from "@/lib/profile-dto";
 import { ProfileSettingsForm, SkillListingForm } from "../profile-forms";
+import { MemberGallery, ProfileImageTools } from "../member-media-forms";
 import {
   deleteSkillListing,
   hideProfileForThreeMonths,
@@ -12,10 +13,14 @@ import {
   unblockProfile,
 } from "../actions";
 
-export default async function EditProfilePage() {
+export default async function EditProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mediaError?: string; mediaSaved?: string }>;
+}) {
   const member = await requireMemberPage();
   const prisma = getPrismaClient();
-  const [profile, categories, requests, blocks] = await Promise.all([
+  const [profile, categories, requests, blocks, gallery, params] = await Promise.all([
     getSelfProfileForMember(member.id),
     prisma.skillCategory.findMany({
       where: { isActive: true },
@@ -36,6 +41,13 @@ export default async function EditProfilePage() {
       },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.memberMedia.findMany({
+      where: { userId: member.id, communityPostId: null },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+      select: { id: true, contentType: true },
+    }),
+    searchParams,
   ]);
   if (!profile)
     return (
@@ -84,6 +96,29 @@ export default async function EditProfilePage() {
         >
           <span style={{ width: `${completeness}%` }} />
         </div>
+      </section>
+      <section className="settings-panel" id="profile-picture">
+        <h2>Your profile picture</h2>
+        {params.mediaSaved && <p className="success-notice">Your profile media was updated.</p>}
+        {params.mediaError && (
+          <p className="error-notice">
+            {params.mediaError === "profile-image"
+              ? "Choose a valid PNG, JPG, or WebP image under 4 MB."
+              : params.mediaError === "gallery-files"
+                ? "Choose up to 3 supported images or videos, each under 8 MB."
+                : params.mediaError === "gallery-limit"
+                  ? "Your profile can have up to 12 photos and videos. Remove one before adding more."
+                  : "Media could not be stored. Check that Cloudflare R2 is configured, then try again."}
+          </p>
+        )}
+        <ProfileImageTools userId={member.id} hasImage={Boolean(profile.profileImageObjectKey)} />
+      </section>
+      <section className="settings-panel">
+        <h2>Photos and videos</h2>
+        <p className="form-hint">
+          These are optional and appear to members who can view your profile.
+        </p>
+        <MemberGallery items={gallery} owner />
       </section>
       <section className="settings-panel">
         <h2>Profile details and privacy</h2>

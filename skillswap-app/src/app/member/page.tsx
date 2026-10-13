@@ -8,16 +8,6 @@ import { ReferralInviteCard } from "@/components/referral-invite-card";
 import { ensureMemberReferralCode } from "@/lib/referrals";
 import { TimeOfDayGreeting } from "@/components/time-of-day-greeting";
 
-const dashboardLinks = [
-  { href: "/member", icon: "⌂", label: "Overview" },
-  { href: "/discover", icon: "⌕", label: "Discover" },
-  { href: "/profile/edit", icon: "✳", label: "My skills" },
-  { href: "/exchanges", icon: "⇄", label: "Exchanges" },
-  { href: "/connections", icon: "▤", label: "Chat" },
-  { href: "/wallet", icon: "◉", label: "Credits" },
-  { href: "/saved", icon: "♡", label: "Saved" },
-];
-
 export default async function MemberPage({
   searchParams,
 }: {
@@ -96,13 +86,25 @@ export default async function MemberPage({
             name={name}
             initialGreeting={greeting}
             timeZone={profile?.timezone ?? undefined}
+            profileImageUrl={
+              profile?.profileImageObjectKey ? `/api/member-avatar/${member.id}` : undefined
+            }
           />
+          {!profile?.profileImageObjectKey && (
+            <Link className="member-profile-photo-cta" href="/profile/edit#profile-picture">
+              <span aria-hidden="true">📷</span> Add a profile picture
+            </Link>
+          )}
           <p>A little knowledge goes a long way. What will you learn today?</p>
           <Link className="member-find-skill" href="/discover">
             <span aria-hidden="true">＋</span> Find a skill to learn
           </Link>
           <Link className="member-browse-members secondary-button" href="/members">
             Browse members <span aria-hidden="true">→</span>
+          </Link>
+          <Link className="member-learned-today" href="/community?compose=learned">
+            <span aria-hidden="true">✎</span>
+            <span>What I learned today</span>
           </Link>
         </section>
 
@@ -180,22 +182,6 @@ export default async function MemberPage({
             </Link>
           </article>
         </section>
-
-        <nav className="member-bottom-nav" aria-label="Member navigation">
-          {dashboardLinks.map((item, index) => (
-            <Link
-              aria-current={index === 0 ? "page" : undefined}
-              className={index === 0 ? "active" : undefined}
-              href={item.href}
-              key={item.href}
-            >
-              <span className="member-bottom-nav-icon" aria-hidden="true">
-                {item.icon}
-              </span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
       </div>
     </main>
   );

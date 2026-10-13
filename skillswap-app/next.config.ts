@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   distDir: process.env.SKILLSWAP_NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   reactStrictMode: true,
+  experimental: {
+    serverActions: { bodySizeLimit: "16mb" },
+  },
   async headers() {
     return [
       {

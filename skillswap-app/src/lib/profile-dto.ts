@@ -63,6 +63,7 @@ export type ProfileViewDTO =
 
 export type MemberSelfProfileDTO = {
   displayName: string | null;
+  profileImageObjectKey: string | null;
   bio: string | null;
   location: string | null;
   timezone: string;
@@ -98,6 +99,7 @@ export async function getSelfProfileForMember(
       memberProfile: {
         select: {
           displayName: true,
+          profileImageObjectKey: true,
           bio: true,
           location: true,
           timezone: true,

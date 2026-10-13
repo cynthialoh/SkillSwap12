@@ -88,6 +88,10 @@ export default async function ConversationPage({
           >
             Report member
           </Link>
+          <Link className="conversation-session-cta" href="/sessions/new">
+            <span aria-hidden="true">📅</span>
+            Book a session
+          </Link>
         </header>
         {error && <p className="error-notice">{error}</p>}
         {count > pageSize && (

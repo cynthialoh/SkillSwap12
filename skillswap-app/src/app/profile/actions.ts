@@ -1,10 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { randomUUID } from "node:crypto";
 import { AccessDeniedError, requireMember } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
 import { applyBlock } from "@/lib/blocking";
 import { sendTransactionalEmail } from "@/lib/email/zeptomail";
+import { deletePrivateR2Object, uploadPrivateR2Object } from "@/lib/storage/r2";
+import {
+  memberMediaMaxBytes,
+  memberMediaTypes,
+  mediaMatchesSignature,
+  profileImageMaxBytes,
+} from "@/lib/member-media-validation";
 import type {
   ExperienceLevel,
   ProfileAccessStatus,
@@ -82,6 +91,137 @@ export async function updateProfileSettings(_state: FormState, data: FormData): 
   } catch (error) {
     return failure(error);
   }
+}
+
+export async function uploadProfileImage(data: FormData): Promise<void> {
+  const member = await requireMember();
+  const file = data.get("profileImage");
+  if (
+    !(file instanceof File) ||
+    file.size < 1 ||
+    file.size > profileImageMaxBytes ||
+    !["image/png", "image/jpeg", "image/webp"].includes(file.type)
+  ) {
+    redirect("/profile/edit?mediaError=profile-image");
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!mediaMatchesSignature(file.type, bytes)) redirect("/profile/edit?mediaError=profile-image");
+  const prisma = getPrismaClient();
+  const previous = await prisma.memberProfile.findUnique({
+    where: { userId: member.id },
+    select: { profileImageObjectKey: true },
+  });
+  const objectKey = `member-avatar/${member.id}/${randomUUID()}`;
+  try {
+    await uploadPrivateR2Object(objectKey, Buffer.from(bytes), file.type);
+    await prisma.memberProfile.update({
+      where: { userId: member.id },
+      data: { profileImageObjectKey: objectKey },
+    });
+  } catch {
+    try {
+      await deletePrivateR2Object(objectKey);
+    } catch {
+      /* A retention sweep can remove an orphaned upload. */
+    }
+    redirect("/profile/edit?mediaError=storage");
+  }
+  if (previous?.profileImageObjectKey) {
+    try {
+      await deletePrivateR2Object(previous.profileImageObjectKey);
+    } catch {
+      /* Keep the new profile image if cleanup fails. */
+    }
+  }
+  revalidatePath("/profile/edit");
+  revalidatePath("/member");
+  revalidatePath(`/profiles/${member.id}`);
+  redirect("/profile/edit?mediaSaved=1");
+}
+
+export async function removeProfileImage(): Promise<void> {
+  const member = await requireMember();
+  const prisma = getPrismaClient();
+  const profile = await prisma.memberProfile.findUnique({
+    where: { userId: member.id },
+    select: { profileImageObjectKey: true },
+  });
+  await prisma.memberProfile.update({
+    where: { userId: member.id },
+    data: { profileImageObjectKey: null },
+  });
+  if (profile?.profileImageObjectKey) {
+    try {
+      await deletePrivateR2Object(profile.profileImageObjectKey);
+    } catch {
+      /* The database no longer exposes this image. */
+    }
+  }
+  revalidatePath("/profile/edit");
+  revalidatePath("/member");
+  revalidatePath(`/profiles/${member.id}`);
+  redirect("/profile/edit?mediaSaved=1");
+}
+
+export async function uploadMemberGallery(data: FormData): Promise<void> {
+  const member = await requireMember();
+  const files = data
+    .getAll("gallery")
+    .filter((value): value is File => value instanceof File && value.size > 0);
+  const totalBytes = files.reduce((total, file) => total + file.size, 0);
+  if (
+    !files.length ||
+    files.length > 3 ||
+    files.some((file) => !memberMediaTypes.has(file.type) || file.size > memberMediaMaxBytes)
+  ) {
+    redirect("/profile/edit?mediaError=gallery-files");
+  }
+  if (totalBytes > 15 * 1024 * 1024) redirect("/profile/edit?mediaError=gallery-files");
+  const existing = await getPrismaClient().memberMedia.count({
+    where: { userId: member.id, communityPostId: null },
+  });
+  if (existing + files.length > 12) redirect("/profile/edit?mediaError=gallery-limit");
+  const uploaded: Array<{ objectKey: string; contentType: string; sizeBytes: number }> = [];
+  try {
+    for (const file of files) {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (!mediaMatchesSignature(file.type, bytes)) throw new Error("Invalid media file");
+      const objectKey = `member-media/${member.id}/profile/${randomUUID()}`;
+      await uploadPrivateR2Object(objectKey, Buffer.from(bytes), file.type);
+      uploaded.push({ objectKey, contentType: file.type, sizeBytes: file.size });
+    }
+    await getPrismaClient().memberMedia.createMany({
+      data: uploaded.map((item) => ({ userId: member.id, ...item })),
+    });
+  } catch {
+    await Promise.all(
+      uploaded.map(({ objectKey }) => deletePrivateR2Object(objectKey).catch(() => {})),
+    );
+    redirect("/profile/edit?mediaError=storage");
+  }
+  revalidatePath("/profile/edit");
+  revalidatePath(`/profiles/${member.id}`);
+  redirect("/profile/edit?mediaSaved=1");
+}
+
+export async function removeMemberGalleryItem(data: FormData): Promise<void> {
+  const member = await requireMember();
+  const id = text(data, "mediaId");
+  const item = await getPrismaClient().memberMedia.findFirst({
+    where: { id, userId: member.id, communityPostId: null },
+    select: { id: true, objectKey: true },
+  });
+  if (item) {
+    await getPrismaClient().memberMedia.delete({ where: { id: item.id } });
+    try {
+      await deletePrivateR2Object(item.objectKey);
+    } catch {
+      /* The database no longer exposes this media. */
+    }
+  }
+  revalidatePath("/profile/edit");
+  revalidatePath(`/profiles/${member.id}`);
+  redirect("/profile/edit?mediaSaved=1");
 }
 
 export async function saveSkillListing(_state: FormState, data: FormData): Promise<FormState> {
