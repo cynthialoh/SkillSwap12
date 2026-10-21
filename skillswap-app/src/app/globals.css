@@ -2874,18 +2874,19 @@ body:has(.member-bottom-nav) {
 .member-welcome h1 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 .member-greeting-avatar-link {
   display: inline-grid;
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  margin-left: 5px;
   place-items: center;
   overflow: hidden;
-  border: 2px solid #d9f2ec;
+  border: 3px solid #d9f2ec;
   border-radius: 50%;
-  background: #fff;
+  background: #000;
   line-height: 1;
   text-decoration: none;
   vertical-align: middle;
