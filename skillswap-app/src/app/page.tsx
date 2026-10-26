@@ -1,63 +1,14 @@
 import Image from "next/image";
 
-const memberLinks = ["Overview", "Discover", "My skills", "Exchanges", "Credits"];
-
 export default function HomePage() {
   return (
-    <main className="app-shell">
-      <aside className="sidebar" aria-label="Member workspace">
-        <a className="brand" href="#home" aria-label="SkillSwap home">
-          <Image src="/skillswap-symbol.png" alt="" width={42} height={42} priority />
-          <Image
-            className="wordmark"
-            src="/skillswap-wordmark.png"
-            alt="SkillSwap"
-            width={119}
-            height={28}
-            priority
-          />
-        </a>
-        <p className="nav-label">MEMBER SPACE</p>
-        <nav className="nav-list" aria-label="Member navigation">
-          {memberLinks.map((label, index) => {
-            const content = (
-              <>
-                <span aria-hidden="true" className="nav-number">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                {label}
-              </>
-            );
-
-            return index === 0 ? (
-              <a aria-current="page" className="nav-link active" href="#home" key={label}>
-                {content}
-              </a>
-            ) : (
-              <span aria-disabled="true" className="nav-link nav-link-disabled" key={label}>
-                {content}
-              </span>
-            );
-          })}
-        </nav>
-        <div className="sidebar-note">
-          <span className="note-icon" aria-hidden="true">
-            ✦
-          </span>
-          <strong>Every skill has value.</strong>
-          <p>Share what you know. Find what you need.</p>
-        </div>
-        <div className="sidebar-footer">
-          <span className="status-dot" aria-hidden="true" />
-          Foundation preview
-        </div>
-      </aside>
-
-      <section className="workspace" id="home">
+    <main className="landing-page" id="home">
+      <section className="workspace">
         <header className="topbar">
-          <span className="breadcrumb">
-            SkillSwap <span aria-hidden="true">/</span> Workspace
-          </span>
+          <a className="landing-brand" href="#home" aria-label="SkillSwap home">
+            <Image src="/skillswap-symbol.png" alt="" width={38} height={38} priority />
+            <Image className="wordmark" src="/skillswap-wordmark.png" alt="SkillSwap" width={119} height={28} priority />
+          </a>
           <div className="topbar-actions">
             <span className="role-pill">Member account</span>
             <a className="topbar-link" href="/sign-in">

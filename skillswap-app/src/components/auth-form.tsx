@@ -127,7 +127,7 @@ export function AuthForm({ mode, resetToken }: AuthFormProps) {
                 name="password"
                 type={showPassword ? "text" : "password"}
                 required
-                minLength={12}
+                minLength={8}
                 maxLength={128}
               />
               <button
@@ -144,7 +144,7 @@ export function AuthForm({ mode, resetToken }: AuthFormProps) {
         )}
         {mode === "sign-up" && (
           <p className="field-hint">
-            Use at least 12 characters. You can teach and learn from this same account.
+            Use at least 8 characters. You can teach and learn from this same account.
           </p>
         )}
         {error && (

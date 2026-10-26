@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "node scripts/next.mjs dev --webpack --hostname 127.0.0.1",
-    "prebuild": "prisma migrate deploy && prisma generate",
+    "prebuild": "node scripts/prebuild.mjs",
     "build": "node scripts/next.mjs build --webpack",
     "start": "node scripts/next.mjs start",
     "lint": "eslint .",
@@ -28,13 +28,15 @@
     "@netlify/database": "^2.0.1",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
+    "@types/web-push": "^3.6.4",
     "better-auth": "^1.7.7",
     "dotenv": "17.2.2",
     "next": "16.4.0",
     "nodemailer": "^10.1.0",
     "pg": "8.16.3",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "24.7.2",

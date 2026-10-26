@@ -28,6 +28,7 @@ export function MemberAppNavigation({
   unreadNotifications: number;
 }) {
   const pathname = usePathname();
+  if (pathname === "/") return null;
   return (
     <nav className="member-bottom-nav" aria-label="Member navigation">
       {links.map((item) => {

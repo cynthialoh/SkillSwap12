@@ -4,6 +4,7 @@ import { PwaClient } from "./pwa-client";
 import { BackButton } from "@/components/back-button";
 import { MemberAppNavigation } from "@/components/member-app-navigation";
 import { MemberActivityPoller } from "@/components/member-activity-poller";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { getActor } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
 
@@ -54,6 +55,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="en">
       <body>
         {children}
+        <ThemeToggle />
         {isMember && (
           <>
             <MemberActivityPoller initialCursor={notificationsAfter} />

@@ -508,16 +508,24 @@ export async function proposeReschedule(data: FormData) {
     )
       throw new Error("Choose a valid future time within six months.");
     const currentProposal = session.proposals[0];
-    if (currentProposal && currentProposal.responseDueAt > new Date())
+    if (
+      currentProposal &&
+      currentProposal.responseDueAt > new Date() &&
+      currentProposal.proposerId === member.id
+    )
       throw new Error("Resolve the pending time proposal before creating another.");
     const late =
       !!session.startsAt && session.startsAt.getTime() - Date.now() < RESCHEDULE_CUTOFF_MS;
     await consumeRateLimit(member.id, "session-proposal", 10, 60 * 60 * 1000);
     await getPrismaClient().$transaction(async (tx) => {
-      if (currentProposal)
+      if (currentProposal && currentProposal.status === "PENDING")
         await tx.sessionTimeProposal.update({
           where: { id: currentProposal.id },
-          data: { status: "EXPIRED", respondedAt: new Date() },
+          data: {
+            status:
+              currentProposal.responseDueAt > new Date() ? "SUPERSEDED" : "EXPIRED",
+            respondedAt: new Date(),
+          },
         });
       await tx.sessionTimeProposal.create({
         data: {

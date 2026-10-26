@@ -21,7 +21,7 @@ export default async function SessionDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ notice?: string; error?: string }>;
+  searchParams: Promise<{ notice?: string; error?: string; adjust?: string }>;
 }) {
   const member = await requireMemberPage();
   const { id } = await params;
@@ -268,15 +268,36 @@ export default async function SessionDetailPage({
           </p>
           {pending.reason && <p>Reason: {pending.reason}</p>}
           {pending.proposerId !== member.id && pending.responseDueAt > new Date() && (
-            <form action={respondToTimeProposal} className="request-owner-actions">
-              <input type="hidden" name="sessionId" value={id} />
-              <button className="primary-button" name="decision" value="ACCEPT">
-                Accept time
-              </button>
-              <button className="secondary-button" name="decision" value="DECLINE">
-                Decline
-              </button>
-            </form>
+            <>
+              <form action={respondToTimeProposal} className="request-owner-actions">
+                <input type="hidden" name="sessionId" value={id} />
+                <button className="primary-button" name="decision" value="ACCEPT">
+                  Confirm time
+                </button>
+                <button className="secondary-button" name="decision" value="DECLINE">
+                  Decline
+                </button>
+              </form>
+              <details className="session-adjust-details" open={query.adjust === "1"}>
+                <summary>Suggest a different time</summary>
+                <form action={proposeReschedule} className="interaction-form session-inline-form">
+                  <input type="hidden" name="sessionId" value={id} />
+                  <label>
+                    New date and time
+                    <input type="datetime-local" name="startsAtLocal" required />
+                  </label>
+                  <label>
+                    Time zone
+                    <input name="timezone" defaultValue={timezone} required maxLength={80} />
+                  </label>
+                  <label>
+                    Optional note
+                    <input name="reason" maxLength={500} />
+                  </label>
+                  <button className="primary-button">Send adjusted time</button>
+                </form>
+              </details>
+            </>
           )}
           {pending.proposerId === member.id && pending.responseDueAt > new Date() && (
             <form action={withdrawTimeProposal}>

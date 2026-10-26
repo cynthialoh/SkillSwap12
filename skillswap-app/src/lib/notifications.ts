@@ -2,6 +2,7 @@ import "server-only";
 
 import type { NotificationCategory } from "@/generated/prisma/client";
 import { getPrismaClient } from "@/lib/db/prisma";
+import { sendWebPushToMember } from "@/lib/web-push";
 
 type NotificationInput = {
   recipientId: string;
@@ -81,6 +82,13 @@ export async function enqueueNotification(input: NotificationInput) {
         where: { notificationId: notification.id },
         create: { notificationId: notification.id },
         update: {},
+      });
+    }
+    if (input.category === "SESSION") {
+      await sendWebPushToMember(input.recipientId, {
+        title: input.title.slice(0, 140),
+        body: input.body.slice(0, 240),
+        href,
       });
     }
   } catch (error) {

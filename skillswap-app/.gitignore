@@ -13,3 +13,10 @@ yarn-debug.log*
 pnpm-debug.log*
 *.tsbuildinfo
 .DS_Store
+/android/.gradle/
+/android/**/build/
+/android-signing/
+/android-output/
+
+# Local Netlify folder
+.netlify

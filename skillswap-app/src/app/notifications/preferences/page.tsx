@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireMemberPage } from "@/lib/dal";
 import { getPrismaClient } from "@/lib/db/prisma";
+import { PushNotificationSettings } from "@/components/push-notification-settings";
 import { saveNotificationPreferences } from "../actions";
 
 const preferences = [
@@ -54,6 +55,7 @@ export default async function NotificationPreferencesPage({
           Choose which optional activity appears in your inbox and which transactional notices
           arrive by email. Session reminders use your saved time zone.
         </p>
+        <PushNotificationSettings />
         <form action={saveNotificationPreferences} className="interaction-form preference-list">
           {preferences.map(([name, title, description]) => (
             <label className="preference-row" key={name}>

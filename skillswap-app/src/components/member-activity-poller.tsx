@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { respondToTimeProposal } from "@/app/sessions/actions";
 
 type Notice = { id: string; title: string; body: string; href: string };
 
@@ -50,12 +51,43 @@ export function MemberActivityPoller({ initialCursor }: { initialCursor: string 
           <div>
             <strong>{notice.title}</strong>
             <p>{notice.body}</p>
-            <Link
-              href={notice.href}
-              onClick={() => setNotices((items) => items.filter((item) => item.id !== notice.id))}
-            >
-              Open
-            </Link>
+            {notice.title === "New session request" ? (
+              <div className="session-request-toast-actions">
+                <Link
+                  className="primary-button"
+                  href={notice.href}
+                  onClick={() => setNotices((items) => items.filter((item) => item.id !== notice.id))}
+                >
+                  Review request
+                </Link>
+                <Link
+                  className="secondary-button"
+                  href={`${notice.href}?adjust=1`}
+                  onClick={() => setNotices((items) => items.filter((item) => item.id !== notice.id))}
+                >
+                  Adjust time
+                </Link>
+                <form action={respondToTimeProposal}>
+                  <input type="hidden" name="sessionId" value={notice.href.split("/").at(-1)} />
+                  <button className="primary-button" name="decision" value="ACCEPT">
+                    Confirm
+                  </button>
+                </form>
+                <form action={respondToTimeProposal}>
+                  <input type="hidden" name="sessionId" value={notice.href.split("/").at(-1)} />
+                  <button className="toast-text-button" name="decision" value="DECLINE">
+                    Decline
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <Link
+                href={notice.href}
+                onClick={() => setNotices((items) => items.filter((item) => item.id !== notice.id))}
+              >
+                Open
+              </Link>
+            )}
           </div>
           <button
             type="button"
