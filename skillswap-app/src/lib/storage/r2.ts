@@ -81,7 +81,15 @@ export async function uploadPrivateR2Object(objectKey: string, body: Buffer, con
     body: new Uint8Array(body),
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`Private evidence upload failed (${response.status}).`);
+  if (!response.ok) {
+    const responseBody = await response.text().catch(() => "");
+    const code = responseBody.match(/<Code>([^<]+)<\/Code>/)?.[1];
+    const message = responseBody.match(/<Message>([^<]+)<\/Message>/)?.[1];
+    // Keep storage diagnostics useful without ever logging the signed URL or credentials.
+    throw new Error(
+      `Private media upload failed (HTTP ${response.status}${code ? `, ${code}` : ""}${message ? `: ${message.slice(0, 160)}` : ""}).`,
+    );
+  }
 }
 
 export async function deletePrivateR2Object(objectKey: string) {

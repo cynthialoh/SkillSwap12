@@ -108,7 +108,7 @@ export default async function EditProfilePage({
                 ? "Choose up to 3 supported images or videos, each under 8 MB."
                 : params.mediaError === "gallery-limit"
                   ? "Your profile can have up to 12 photos and videos. Remove one before adding more."
-                  : "Media could not be stored. Check that Cloudflare R2 is configured, then try again."}
+                  : "Cloudflare could not save this media. Please try again. If it keeps failing, the storage error is now recorded so it can be diagnosed."}
           </p>
         )}
         <ProfileImageTools userId={member.id} hasImage={Boolean(profile.profileImageObjectKey)} />

@@ -118,7 +118,11 @@ export async function uploadProfileImage(data: FormData): Promise<void> {
       where: { userId: member.id },
       data: { profileImageObjectKey: objectKey },
     });
-  } catch {
+  } catch (error) {
+    console.error(
+      "Profile image storage failed:",
+      error instanceof Error ? error.message : "Unknown storage error.",
+    );
     try {
       await deletePrivateR2Object(objectKey);
     } catch {
